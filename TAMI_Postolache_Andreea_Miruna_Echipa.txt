@@ -1,0 +1,37 @@
+
+SARCINI
+
+
+Cerinte                            Miruna           Alexandra                Talida
+----------------------------------------------------------------------------------------
+                                        MODUL ANALIZA
+cerințele 1-9                                PP (Pair Programming)
+-----------------------------------------------------------------------------------------
+cerinta 10                         1 cerere       |      2 cereri    |	      2 cereri
+-----------------------------------------------------------------------------------------
+					MODUL BACKEND
+------------------------------------------------------------------------------------------
+cerintele 1-2                   tabelele Book,     | tabelele User,  |   tabelele Review,
+			       Publisher, Serie,   |   Address,	     |	  Order_TAM,
+                               Category, Author,   |     City,	     |	Order_Detail
+                                  tabele olap      |    Country      |
+--------------------------------------------------------------------------------------------
+cerinta 3-8                                          PP (Pair Programming)
+---------------------------------------------------------------------------------------------
+cerinta 9                       Implementare       |
+---------------------------------------------------------------------------------------------
+cerinta 10 			  1 cerere         |      2 cereri    |      2 cereri
+----------------------------------------------------------------------------------------------
+					MODUL FRONTEND
+----------------------------------------------------------------------------------------------
+cerintele 1-2             BACKEND (ORDS) pentru    |FRONTEND  oltp    |
+                           oltp si olap, PP        |    si olap,   PP |
+ 
+cerinta 3                  2 grafice statistici    | 3 grafice statistici | 
+                                in frontend        |       in frontend    |
+
+
+Componența echipei:
+	- Dobre Talida Marina, 505
+	- Ion Alexandra, 505
+	- Postolache Andreea Miruna, 505

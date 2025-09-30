@@ -1,0 +1,4105 @@
+--crearea bazei de date oltp și a utilizatorilor
+create role master;
+ 
+grant create view to master;
+GRANT CREATE PROCEDURE TO master;
+GRANT CREATE SEQUENCE TO master;
+GRANT CREATE SYNONYM TO master;
+GRANT CREATE TABLE TO master;
+GRANT CREATE TRIGGER TO master;
+GRANT CREATE TYPE TO master;
+GRANT QUERY REWRITE TO master;
+GRANT CONNECT TO master;
+GRANT RESOURCE TO master;
+GRANT SELECT_CATALOG_ROLE to master;
+GRANT CREATE MATERIALIZED VIEW to master;
+GRANT ALTER SESSION to master;
+GRANT SELECT ANY DICTIONARY to master;
+GRANT CREATE PUBLIC DATABASE LINK to master;
+GRANT CREATE PUBLIC SYNONYM to master;
+grant create dimension to master;
+
+create user DWBI_miruna identified by DWBI_miruna;
+grant  master to DWBI_miruna;
+grant  UNLIMITED TABLESPACE  to  DWBI_miruna;
+
+CREATE SEQUENCE NEXT_ID_USER
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE USER_TAM (
+    id_user               NUMBER(5) NOT NULL, 
+    name                  VARCHAR2(255) NOT NULL,
+    email                 VARCHAR2(100) NOT NULL,
+    password              VARCHAR2(255) NOT NULL,
+    accountCreationDate   DATE NOT NULL,
+    is_deleted            NUMBER(1) NOT NULL CONSTRAINT CHK_IsDeleted CHECK (is_deleted IN (0, 1)), 
+    gender                VARCHAR2(5) NOT NULL CONSTRAINT CHK_Gender CHECK (gender IN ('M', 'F')),  
+    type                  VARCHAR2(20) NOT NULL CONSTRAINT CHK_Type CHECK (type IN ('Persoana fizica', 'Persoana juridica')),  
+    UNIQUE(email),
+    CONSTRAINT PK_User PRIMARY KEY (id_user)
+);
+
+CREATE SEQUENCE NEXT_ID_COUNTRY
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE COUNTRY (
+    id_country               NUMBER(5) NOT NULL, 
+    name                  VARCHAR2(25) NOT NULL, 
+    UNIQUE(name),
+    CONSTRAINT PK_Country PRIMARY KEY (id_country)
+);
+
+CREATE SEQUENCE NEXT_ID_CITY
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE CITY (
+    id_city               NUMBER(5) NOT NULL, 
+    name                  VARCHAR2(25) NOT NULL, 
+    id_country               NUMBER(5) NOT NULL, 
+    constraint Fk_City_id_country FOREIGN KEY(id_country) REFERENCES COUNTRY(id_country),
+    UNIQUE(name),
+    CONSTRAINT PK_City PRIMARY KEY (id_city)
+);
+
+
+CREATE SEQUENCE NEXT_ID_ADDRESS
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE ADDRESS (
+    id_address               NUMBER(5) NOT NULL, 
+    street                  VARCHAR2(25) NOT NULL, 
+    block                  VARCHAR2(25) NOT NULL, 
+    id_city               NUMBER(5) NOT NULL, 
+    constraint Fk_Address_id_city FOREIGN KEY(id_city) REFERENCES CITY(id_city),
+    id_user               NUMBER(5) NOT NULL, 
+    constraint Fk_Address_id_user FOREIGN KEY(id_user) REFERENCES USER_TAM(id_user),
+    CONSTRAINT PK_Address PRIMARY KEY (id_address)
+);
+
+CREATE SEQUENCE NEXT_ID_AUTHOR
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE AUTHOR (
+    id_author NUMBER(5) NOT NULL,
+    firstName VARCHAR(255) NOT NULL,
+    lastName VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_Author PRIMARY KEY (id_author));
+    
+--------------------------------------------------------
+CREATE SEQUENCE NEXT_ID_CATEGORY
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE CATEGORY (
+    id_category NUMBER(5) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_Category PRIMARY KEY (id_category));
+----------------------------------------------------------
+
+CREATE SEQUENCE NEXT_ID_SERIE
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE SERIE (
+    id_serie NUMBER(5) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_Serie PRIMARY KEY (id_serie));
+---------------------------------------------------------
+
+CREATE SEQUENCE NEXT_ID_PUBLISHER
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE PUBLISHER (
+    id_publisher NUMBER(5) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_Publisher PRIMARY KEY (id_publisher));
+----------------------------------------------------------------
+    
+
+CREATE SEQUENCE NEXT_ID_BOOK
+INCREMENT by 1
+START WITH 1
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE BOOK (
+    id_book NUMBER(5) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    price NUMBER(10, 2) NOT NULL,
+    stock_status NUMBER(10) NOT NULL,
+    year NUMBER(5) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    id_publisher NUMBER(5) NULL,
+    id_category NUMBER(5) NULL,
+    id_author NUMBER(5) NOT NULL,
+    id_serie NUMBER(5) NOT NULL,
+    CONSTRAINT PK_Book PRIMARY KEY (id_book),
+    CONSTRAINT FK_Book_id_publisher FOREIGN KEY(id_publisher) REFERENCES PUBLISHER(id_publisher),
+    CONSTRAINT FK_Book_id_category FOREIGN KEY(id_category) REFERENCES CATEGORY(id_category),
+    CONSTRAINT FK_Book_id_author FOREIGN KEY(id_author) REFERENCES AUTHOR(id_author),
+    CONSTRAINT FK_Book_id_serie FOREIGN KEY(id_serie) REFERENCES SERIE(id_serie)
+    );
+CREATE TABLE REVIEW (
+    review_date DATE NOT NULL,
+    id_user NUMBER(5) NOT NULL,
+    id_book NUMBER(5) NOT NULL,
+    rating NUMBER(1) NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    review_comment VARCHAR2(1000) NULL,
+    CONSTRAINT PK_Review PRIMARY KEY (review_date, id_user, id_book),
+    CONSTRAINT FK_Review_id_user FOREIGN KEY (id_user) REFERENCES USER_TAM(id_user),
+    CONSTRAINT FK_Review_id_book FOREIGN KEY (id_book) REFERENCES BOOK(id_book)
+);
+
+CREATE SEQUENCE NEXT_ID_ORDER_TAM
+INCREMENT by 1
+START WITH 51
+MAXVALUE 99999
+NOCYCLE;
+
+CREATE TABLE ORDER_TAM (
+    id_order NUMBER(5) NOT NULL, 
+    id_user NUMBER(5) NOT NULL,
+    order_date DATE NOT NULL,
+    total_price NUMBER(10, 2) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    id_address NUMBER(5) NOT NULL,
+    CONSTRAINT PK_Order_Tam PRIMARY KEY (id_order),
+    CONSTRAINT FK_Order_id_user FOREIGN KEY (id_user) REFERENCES USER_TAM(id_user),
+    CONSTRAINT FK_Order_id_address FOREIGN KEY (id_address) REFERENCES ADDRESS(id_address)
+);
+ 
+CREATE TABLE ORDER_DETAIL (
+    id_order NUMBER(5) NOT NULL, 
+    id_book NUMBER(5) NOT NULL, 
+    quantity NUMBER(10) NOT NULL,
+    price NUMBER(10, 2) NOT NULL,
+    discount NUMBER(5, 2) DEFAULT 0,
+    CONSTRAINT PK_OrderDetail PRIMARY KEY (id_order, id_book), 
+    CONSTRAINT FK_OrderDetail_id_order FOREIGN KEY (id_order) REFERENCES ORDER_TAM(id_order),
+    CONSTRAINT FK_OrderDetail_id_book FOREIGN KEY (id_book) REFERENCES BOOK(id_book)
+);
+
+
+select * from USER_TAM;
+SELECT * FROM COUNTRY;
+SELECT * FROM CITY;
+SELECT * FROM ADDRESS;
+
+SELECT * FROM AUTHOR;
+SELECT * FROM CATEGORY;
+SELECT * FROM SERIE;
+SELECT * FROM PUBLISHER;
+SELECT * FROM BOOK;
+
+SELECT * FROM REVIEW;
+SELECT * FROM ORDER_TAM;
+SELECT * FROM ORDER_DETAIL;
+
+--generarea datelor și inserarea acestora in tabele
+ INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Ion Popescu', 'ion.popescu@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Maria Ionescu', 'maria.ionescu@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Andrei Vasilescu', 'andrei.vasilescu@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Elena Stoica', 'elena.stoica@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Mihai Georgescu', 'mihai.georgescu@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Ioana Dobre', 'ioana.dobre@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Cosmin Munteanu', 'cosmin.munteanu@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Diana Vasile', 'diana.vasile@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Gabriel Nistor', 'gabriel.nistor@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Ana Popa', 'ana.popa@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Ion Cristea', 'ion.cristea@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Maria Tudor', 'maria.tudor@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Alexandru Olaru', 'alexandru.olaru@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Simona Gheorghiu', 'simona.gheorghiu@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Victor Ilie', 'victor.ilie@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Cristina Popescu', 'cristina.popescu@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Radu Petrescu', 'radu.petrescu@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Livia Marinescu', 'livia.marinescu@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Victor Stoian', 'victor.stoian@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Mihaila Radu', 'mihaila.radu@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Stefan Pavel', 'stefan.pavel@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Gina Pop', 'gina.pop@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Alex Andrei', 'alex.andrei@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Maria Sorin', 'maria.sorin@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Nicoleta Lupu', 'nicoleta.lupu@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana juridica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Florin Balan', 'florin.balan@email.com', 'password123', SYSDATE, 0, 'M', 'Persoana fizica');
+INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+VALUES (NEXT_ID_USER.NEXTVAL, 'Adriana Negulescu', 'adriana.negulescu@email.com', 'password123', SYSDATE, 0, 'F', 'Persoana juridica');
+
+select * from USER_TAM;
+
+COMMIT;
+
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Romania');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Italia');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Spania');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Franta');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Germania');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Anglia');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'SUA');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Canada');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'Australia');
+INSERT INTO COUNTRY (id_country, name) VALUES (NEXT_ID_COUNTRY.NEXTVAL, 'India');
+
+SELECT * FROM COUNTRY;
+
+COMMIT;
+
+-- Romania
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Cluj-Napoca', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Constanta', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Bucuresti', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Brasov', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Iasi', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Timisoara', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Oradeaa', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'SIbiu', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Craiovaa', 1);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Targoviste', 1);
+
+-- Italia
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Milano', 2);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Venetia', 2);
+
+-- Spania
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Barcelona', 3);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Sevilia', 3);
+
+-- Franta
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Lyon', 4);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Marseille', 4);
+
+-- Germania
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Munchen', 5);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Hamburg', 5);
+
+-- Anglia
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Manchester', 6);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Birmingham', 6);
+
+-- SUA
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Los Angeles', 7);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'San Francisco', 7);
+
+-- Canada
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Vancouver', 8);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Montreal', 8);
+
+-- Australia
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Melbourne', 9);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Brisbane', 9);
+
+-- India
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Mumbai', 10);
+INSERT INTO CITY (id_city, name, id_country) VALUES (NEXT_ID_CITY.NEXTVAL, 'Kolkata', 10);
+select * from city;
+COMMIT;
+
+----- ADRESE ------
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 1', 'Bloc A', 1, 1); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 2', 'Bloc B', 2, 2); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 3', 'Bloc C', 3, 3); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 4', 'Bloc D', 4, 4); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 5', 'Bloc E', 5, 5); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 6', 'Bloc F', 6, 6); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 7', 'Bloc G', 7, 7); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 8', 'Bloc H', 8, 8); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 9', 'Bloc I', 9, 9); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 10', 'Bloc J', 10, 10); 
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 11', 'Bloc K', 11, 11);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 12', 'Bloc L', 12, 12);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 13', 'Bloc M', 13, 13);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 14', 'Bloc N', 14, 14);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 15', 'Bloc O', 15, 15);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 16', 'Bloc P', 16, 16);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 17', 'Bloc Q', 17, 17);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 18', 'Bloc R', 18, 18);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 19', 'Bloc S', 19, 19);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 20', 'Bloc T', 20, 20);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 21', 'Bloc U', 21, 21);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 22', 'Bloc V', 22, 22);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 23', 'Bloc W', 23, 23);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 24', 'Bloc X', 24, 24);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 25', 'Bloc Y', 25, 25);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 26', 'Bloc Z', 26, 26);
+
+INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+VALUES (NEXT_ID_ADDRESS.NEXTVAL, 'Strada 27', 'Bloc AA', 27, 27);
+COMMIT;
+select * from address;
+
+BEGIN
+    -- AUTHOR
+    FOR i IN 1..300 LOOP
+        INSERT INTO AUTHOR (id_author, firstName, lastName) 
+        VALUES (NEXT_ID_AUTHOR.NEXTVAL, 'firstName_' || i, 'lastName_' || i);
+    END LOOP;
+
+    -- CATEGORY
+    FOR i IN 1..21 LOOP
+        INSERT INTO CATEGORY (id_category, name) 
+        VALUES (NEXT_ID_CATEGORY.NEXTVAL, 'category_' || i);
+    END LOOP;
+
+    -- SERIE 
+    FOR i IN 1..50 LOOP
+        INSERT INTO SERIE (id_serie, name) 
+        VALUES (NEXT_ID_SERIE.NEXTVAL, 'serie_' || i);
+    END LOOP;
+
+    -- PUBLISHER 
+    FOR i IN 1..50 LOOP
+        INSERT INTO PUBLISHER (id_publisher, name, email) 
+        VALUES (NEXT_ID_PUBLISHER.NEXTVAL, 'publisher_' || i, 'contact@publisher' || i || '.com');
+    END LOOP;
+
+    -- BOOK 
+    FOR i IN 1..1000 LOOP
+        INSERT INTO BOOK (id_book, name, price, stock_status, year, description, 
+                          id_publisher, id_category, id_author, id_serie) 
+        VALUES (NEXT_ID_BOOK.NEXTVAL, 'book_' || i, 
+                ROUND(DBMS_RANDOM.VALUE(10, 100), 2),              -- price: 10 - 100
+                ROUND(DBMS_RANDOM.VALUE(1, 100)),                -- stock_status 1-1000
+                ROUND(DBMS_RANDOM.VALUE(1870,EXTRACT(YEAR FROM SYSDATE))), -- year 1870 - 2025
+                'Description of Book_' || i,                      
+                (SELECT id_publisher FROM (SELECT id_publisher FROM PUBLISHER ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1), 
+                (SELECT id_category FROM (SELECT id_category FROM CATEGORY ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1),   
+                (SELECT id_author FROM (SELECT id_author FROM AUTHOR ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1),         
+                (SELECT id_serie FROM (SELECT id_serie FROM SERIE ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1));           
+    END LOOP;
+   
+END;
+/
+
+SELECT * FROM SERIE;
+SELECT * FROM CATEGORY;
+SELECT * FROM AUTHOR;
+SELECT * FROM BOOK;
+SELECT * FROM PUBLISHER;
+COMMIT;
+--------------------------
+
+BEGIN
+    FOR i IN 1..500 LOOP
+        INSERT INTO REVIEW (review_date, id_user, id_book, rating, review_comment) 
+        VALUES (
+            TRUNC(SYSDATE) - ROUND(DBMS_RANDOM.VALUE(0, 365)), 
+            (SELECT id_user FROM (SELECT id_user FROM USER_TAM ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1), 
+            (SELECT id_book FROM (SELECT id_book FROM BOOK ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1), 
+            ROUND(DBMS_RANDOM.VALUE(1, 5)), 
+            CASE 
+                WHEN MOD(i, 5) = 0 THEN NULL 
+                ELSE 'Review comment for review #' || i
+            END
+        );
+    END LOOP;
+
+    COMMIT;
+END;
+/
+
+select * from review;
+
+---------------------------------------------
+--Pending Shipped Completed Cancelled
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (1, 1, TO_DATE('2024-01-05', 'YYYY-MM-DD'), 0, 'Completed', 1);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (2, 2, TO_DATE('2024-02-12', 'YYYY-MM-DD'), 0, 'Shipped', 2);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (3, 3, TO_DATE('2024-03-19', 'YYYY-MM-DD'), 0, 'Completed', 3);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (4, 4, TO_DATE('2024-04-22', 'YYYY-MM-DD'), 0, 'Cancelled', 4);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (5, 5, TO_DATE('2024-05-09', 'YYYY-MM-DD'), 0, 'Completed', 5);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (6, 6, TO_DATE('2024-06-17', 'YYYY-MM-DD'), 0, 'Shipped', 6);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (7, 7, TO_DATE('2024-07-24', 'YYYY-MM-DD'), 0, 'Completed', 7);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (8, 8, TO_DATE('2024-08-11', 'YYYY-MM-DD'), 0, 'Cancelled', 8);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (9, 9, TO_DATE('2024-09-03', 'YYYY-MM-DD'), 0, 'Completed', 9);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (10, 10, TO_DATE('2024-10-21', 'YYYY-MM-DD'), 0, 'Shipped', 10);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (11, 11, TO_DATE('2024-11-14', 'YYYY-MM-DD'), 0, 'Completed', 11);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (12, 12, TO_DATE('2024-12-18', 'YYYY-MM-DD'), 0, 'Cancelled', 12);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (13, 13, TO_DATE('2024-01-10', 'YYYY-MM-DD'), 0, 'Completed', 13);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (14, 14, TO_DATE('2024-02-03', 'YYYY-MM-DD'), 0, 'Shipped', 14);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (15, 15, TO_DATE('2024-03-26', 'YYYY-MM-DD'), 0, 'Completed', 15);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (16, 16, TO_DATE('2024-04-13', 'YYYY-MM-DD'), 0, 'Cancelled', 16);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (17, 17, TO_DATE('2024-05-28', 'YYYY-MM-DD'), 0, 'Completed', 17);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (18, 18, TO_DATE('2024-06-06', 'YYYY-MM-DD'), 0, 'Shipped', 18);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (19, 19, TO_DATE('2024-07-19', 'YYYY-MM-DD'), 0, 'Completed', 19);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (20, 20, TO_DATE('2024-08-01', 'YYYY-MM-DD'), 0, 'Cancelled', 20);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (21, 21, TO_DATE('2024-09-25', 'YYYY-MM-DD'), 0, 'Completed', 21);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (22, 22, TO_DATE('2024-10-09', 'YYYY-MM-DD'), 0, 'Shipped', 22);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (23, 23, TO_DATE('2024-11-02', 'YYYY-MM-DD'), 0, 'Completed', 23);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (24, 24, TO_DATE('2024-12-07', 'YYYY-MM-DD'), 0, 'Cancelled', 24);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (25, 25, TO_DATE('2024-01-17', 'YYYY-MM-DD'), 0, 'Completed', 25);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (26, 26, TO_DATE('2024-02-08', 'YYYY-MM-DD'), 0, 'Shipped', 26);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (27, 27, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 0, 'Completed', 27);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (28, 1, TO_DATE('2024-04-07', 'YYYY-MM-DD'), 0, 'Cancelled', 1);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (29, 2, TO_DATE('2024-05-22', 'YYYY-MM-DD'), 0, 'Completed', 2);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (30, 3, TO_DATE('2024-06-12', 'YYYY-MM-DD'), 0, 'Completed', 3);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (31, 4, TO_DATE('2024-07-05', 'YYYY-MM-DD'), 0, 'Completed', 4);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (32, 5, TO_DATE('2024-08-18', 'YYYY-MM-DD'), 0, 'Cancelled', 5);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (33, 6, TO_DATE('2024-09-09', 'YYYY-MM-DD'), 0, 'Completed', 6);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (34, 7, TO_DATE('2024-10-24', 'YYYY-MM-DD'), 0, 'Shipped', 7);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (35, 8, TO_DATE('2024-11-06', 'YYYY-MM-DD'), 0, 'Completed', 8);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (36, 9, TO_DATE('2024-12-01', 'YYYY-MM-DD'), 0, 'Cancelled', 9);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (37, 10, TO_DATE('2024-01-22', 'YYYY-MM-DD'), 0, 'Completed', 10);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (38, 11, TO_DATE('2024-02-28', 'YYYY-MM-DD'), 0, 'Shipped', 11);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (39, 12, TO_DATE('2024-03-10', 'YYYY-MM-DD'), 0, 'Completed', 12);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (40, 13, TO_DATE('2024-04-25', 'YYYY-MM-DD'), 0, 'Cancelled', 13);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (41, 14, TO_DATE('2024-05-30', 'YYYY-MM-DD'), 0, 'Completed', 14);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (42, 15, TO_DATE('2024-06-03', 'YYYY-MM-DD'), 0, 'Completed', 15);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (43, 16, TO_DATE('2024-07-14', 'YYYY-MM-DD'), 0, 'Completed', 16);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (44, 17, TO_DATE('2024-08-09', 'YYYY-MM-DD'), 0, 'Cancelled', 17);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (45, 18, TO_DATE('2024-09-21', 'YYYY-MM-DD'), 0, 'Completed', 18);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (46, 19, TO_DATE('2024-10-13', 'YYYY-MM-DD'), 0, 'Shipped', 19);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (47, 20, TO_DATE('2024-11-18', 'YYYY-MM-DD'), 0, 'Completed', 20);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (48, 21, TO_DATE('2024-12-05', 'YYYY-MM-DD'), 0, 'Cancelled', 21);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (49, 22, TO_DATE('2024-01-29', 'YYYY-MM-DD'), 0, 'Completed', 22);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (50, 23, TO_DATE('2024-02-19', 'YYYY-MM-DD'), 0, 'Shipped', 23);
+commit;
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 1, TO_DATE('2024-01-15', 'YYYY-MM-DD'), 0, 'Pending', 1);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 2, TO_DATE('2024-02-05', 'YYYY-MM-DD'), 0, 'Shipped', 2);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 3, TO_DATE('2024-03-20', 'YYYY-MM-DD'), 0, 'Completed', 3);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 4, TO_DATE('2024-04-13', 'YYYY-MM-DD'), 0, 'Cancelled', 4);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 5, TO_DATE('2024-05-08', 'YYYY-MM-DD'), 0, 'Shipped', 5);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 6, TO_DATE('2024-06-25', 'YYYY-MM-DD'), 0, 'Pending', 6);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 7, TO_DATE('2024-07-10', 'YYYY-MM-DD'), 0, 'Completed', 7);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 8, TO_DATE('2024-08-19', 'YYYY-MM-DD'), 0, 'Cancelled', 8);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 9, TO_DATE('2024-09-03', 'YYYY-MM-DD'), 0, 'Pending', 9);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 10, TO_DATE('2024-10-11', 'YYYY-MM-DD'), 0, 'Shipped', 10);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 11, TO_DATE('2024-11-17', 'YYYY-MM-DD'), 0, 'Completed', 11);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 12, TO_DATE('2024-12-21', 'YYYY-MM-DD'), 0, 'Cancelled', 12);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 13, TO_DATE('2024-01-30', 'YYYY-MM-DD'), 0, 'Shipped', 13);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 14, TO_DATE('2024-02-18', 'YYYY-MM-DD'), 0, 'Pending', 14);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 15, TO_DATE('2024-03-22', 'YYYY-MM-DD'), 0, 'Completed', 15);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 16, TO_DATE('2024-04-09', 'YYYY-MM-DD'), 0, 'Cancelled', 16);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 17, TO_DATE('2024-05-12', 'YYYY-MM-DD'), 0, 'Shipped', 17);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 18, TO_DATE('2024-06-07', 'YYYY-MM-DD'), 0, 'Pending', 18);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 19, TO_DATE('2024-07-14', 'YYYY-MM-DD'), 0, 'Completed', 19);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 20, TO_DATE('2024-08-04', 'YYYY-MM-DD'), 0, 'Cancelled', 20);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 21, TO_DATE('2024-09-11', 'YYYY-MM-DD'), 0, 'Shipped', 21);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 22, TO_DATE('2024-10-23', 'YYYY-MM-DD'), 0, 'Pending', 22);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 23, TO_DATE('2024-11-30', 'YYYY-MM-DD'), 0, 'Completed', 23);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 24, TO_DATE('2024-01-10', 'YYYY-MM-DD'), 0, 'Cancelled', 24);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 25, TO_DATE('2024-02-25', 'YYYY-MM-DD'), 0, 'Shipped', 25);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 26, TO_DATE('2024-03-03', 'YYYY-MM-DD'), 0, 'Pending', 26);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 27, TO_DATE('2024-04-19', 'YYYY-MM-DD'), 0, 'Completed', 27);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 1, TO_DATE('2024-02-28', 'YYYY-MM-DD'), 0, 'Shipped', 1);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 2, TO_DATE('2024-03-15', 'YYYY-MM-DD'), 0, 'Completed', 2);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 3, TO_DATE('2024-04-22', 'YYYY-MM-DD'), 0, 'Cancelled', 3);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 4, TO_DATE('2024-05-04', 'YYYY-MM-DD'), 0, 'Pending', 4);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 5, TO_DATE('2024-06-17', 'YYYY-MM-DD'), 0, 'Shipped', 5);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 6, TO_DATE('2024-07-03', 'YYYY-MM-DD'), 0, 'Completed', 6);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 7, TO_DATE('2024-08-14', 'YYYY-MM-DD'), 0, 'Cancelled', 7);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 8, TO_DATE('2024-09-09', 'YYYY-MM-DD'), 0, 'Shipped', 8);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 9, TO_DATE('2024-10-02', 'YYYY-MM-DD'), 0, 'Completed', 9);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 10, TO_DATE('2024-11-06', 'YYYY-MM-DD'), 0, 'Cancelled', 10);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 11, TO_DATE('2024-12-01', 'YYYY-MM-DD'), 0, 'Pending', 11);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 12, TO_DATE('2024-01-17', 'YYYY-MM-DD'), 0, 'Shipped', 12);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 13, TO_DATE('2024-02-22', 'YYYY-MM-DD'), 0, 'Completed', 13);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 14, TO_DATE('2024-03-25', 'YYYY-MM-DD'), 0, 'Cancelled', 14);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 15, TO_DATE('2024-04-06', 'YYYY-MM-DD'), 0, 'Pending', 15);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 16, TO_DATE('2024-05-19', 'YYYY-MM-DD'), 0, 'Shipped', 16);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 17, TO_DATE('2024-06-29', 'YYYY-MM-DD'), 0, 'Completed', 17);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 18, TO_DATE('2024-07-27', 'YYYY-MM-DD'), 0, 'Cancelled', 18);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 19, TO_DATE('2024-08-09', 'YYYY-MM-DD'), 0, 'Shipped', 19);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 20, TO_DATE('2024-09-20', 'YYYY-MM-DD'), 0, 'Completed', 20);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 21, TO_DATE('2024-10-18', 'YYYY-MM-DD'), 0, 'Cancelled', 21);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 22, TO_DATE('2024-11-08', 'YYYY-MM-DD'), 0, 'Shipped', 22);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 23, TO_DATE('2024-12-10', 'YYYY-MM-DD'), 0, 'Completed', 23);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 1, DATE '2024-01-15', 0, 'Pending', 1);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 2, DATE '2024-02-03', 0, 'Shipped', 2);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 3, DATE '2024-03-12', 0, 'Completed', 3);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 4, DATE '2024-04-20', 0, 'Cancelled', 4);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 5, DATE '2024-05-01', 0, 'Pending', 5);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 6, DATE '2024-06-14', 0, 'Shipped', 6);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 7, DATE '2024-07-07', 0, 'Completed', 7);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 8, DATE '2024-08-25', 0, 'Cancelled', 8);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 9, DATE '2024-09-19', 0, 'Pending', 9);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 10, DATE '2024-10-10', 0, 'Shipped', 10);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 11, DATE '2024-11-22', 0, 'Completed', 11);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 12, DATE '2024-12-03', 0, 'Cancelled', 12);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 13, DATE '2024-01-25', 0, 'Pending', 13);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 14, DATE '2024-02-15', 0, 'Shipped', 14);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 15, DATE '2024-03-05', 0, 'Completed', 15);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 16, DATE '2024-04-15', 0, 'Cancelled', 16);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 17, DATE '2024-05-25', 0, 'Pending', 17);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 18, DATE '2024-06-05', 0, 'Shipped', 18);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 19, DATE '2024-07-15', 0, 'Completed', 19);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 20, DATE '2024-08-05', 0, 'Cancelled', 20);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 21, DATE '2024-09-10', 0, 'Pending', 21);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 22, DATE '2024-10-20', 0, 'Shipped', 22);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 23, DATE '2024-11-15', 0, 'Completed', 23);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 24, DATE '2024-12-10', 0, 'Cancelled', 24);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 25, DATE '2024-01-05', 0, 'Pending', 25);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 26, DATE '2024-02-10', 0, 'Shipped', 26);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 27, DATE '2024-03-20', 0, 'Completed', 27);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 1, DATE '2024-04-05', 0, 'Cancelled', 1);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 2, DATE '2024-05-15', 0, 'Pending', 2);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 3, DATE '2024-06-25', 0, 'Shipped', 3);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 4, DATE '2024-07-10', 0, 'Completed', 4);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 5, DATE '2024-08-20', 0, 'Cancelled', 5);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 6, DATE '2024-09-30', 0, 'Pending', 6);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 7, DATE '2024-10-05', 0, 'Shipped', 7);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 8, DATE '2024-11-25', 0, 'Completed', 8);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 9, DATE '2024-12-15', 0, 'Cancelled', 9);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 10, DATE '2024-01-20', 0, 'Pending', 10);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 11, DATE '2024-02-25', 0, 'Shipped', 11);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 12, DATE '2024-03-15', 0, 'Completed', 12);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 13, DATE '2024-04-20', 0, 'Cancelled', 13);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 14, DATE '2024-05-10', 0, 'Pending', 14);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 15, DATE '2024-06-05', 0, 'Shipped', 15);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 16, DATE '2024-07-15', 0, 'Completed', 16);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 17, DATE '2024-08-30', 0, 'Cancelled', 17);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 18, DATE '2024-09-25', 0, 'Pending', 18);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 19, DATE '2024-10-10', 0, 'Shipped', 19);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 20, DATE '2024-11-05', 0, 'Completed', 20);
+INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address) VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, 21, DATE '2024-12-01', 0, 'Cancelled', 21);
+
+select * from order_tam;
+commit;
+----------------------
+
+----------------------
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (1, 350, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (2, 500, 1, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (2, 300, 3, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (3, 600, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (3, 150, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (3, 800, 4, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (4, 100, 1, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (4, 350, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (4, 240, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (4, 500, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (5, 150, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (5, 500, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (6, 700, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (6, 200, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (7, 450, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (7, 350, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (7, 600, 1, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (8, 240, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (8, 100, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (8, 800, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (9, 250, 1, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (9, 350, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (9, 400, 4, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (10, 500, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (11, 150, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (11, 240, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (12, 400, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (12, 500, 2, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (13, 300, 3, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (13, 600, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (14, 100, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (14, 350, 2, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (15, 200, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (15, 240, 1, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (15, 300, 2, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (16, 800, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (16, 350, 3, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (17, 600, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (17, 240, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (18, 150, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (18, 500, 1, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (19, 200, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (19, 350, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (19, 450, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (20, 100, 1, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (21, 400, 3, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (21, 600, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (22, 800, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (23, 350, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (23, 240, 1, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (24, 300, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (24, 100, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (24, 200, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (25, 400, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (25, 600, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (26, 150, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (26, 300, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (27, 100, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (28, 450, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (28, 500, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (29, 200, 3, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (29, 150, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (29, 350, 1, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (30, 350, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (31, 600, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (31, 240, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (32, 500, 3, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (32, 150, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (33, 450, 1, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (34, 500, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (34, 600, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (35, 150, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (35, 240, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (36, 300, 2, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (37, 100, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (37, 350, 2, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (38, 500, 3, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (38, 200, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (39, 150, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (40, 240, 3, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (40, 350, 1, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (41, 100, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (41, 200, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (42, 300, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (43, 600, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (43, 800, 3, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (44, 150, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (45, 350, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (45, 600, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (46, 500, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (47, 240, 2, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (48, 100, 1, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (49, 350, 3, 0, 0);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (50, 600, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (50, 240, 1, 0, 10);
+
+commit;
+
+
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (51, 712, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (52, 539, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (53, 501, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (54, 680, 4, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (55, 710, 2, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (56, 413, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (57, 601, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (58, 681, 4, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (59, 751, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (60, 815, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (61, 579, 2, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (62, 482, 3, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (63, 614, 1, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (64, 622, 4, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (65, 755, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (66, 545, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (67, 731, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (68, 748, 4, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (69, 589, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (70, 675, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (71, 436, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (72, 461, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (73, 712, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (74, 755, 4, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (75, 542, 1, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (76, 527, 2, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (77, 587, 3, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (78, 622, 4, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (79, 685, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (80, 560, 3, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (81, 640, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (82, 535, 4, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (83, 490, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (84, 579, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (85, 610, 3, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (86, 560, 4, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (87, 624, 2, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (88, 736, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (89, 482, 3, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (90, 712, 4, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (91, 519, 2, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (92, 432, 3, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (93, 702, 4, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (94, 626, 1, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (95, 511, 2, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (96, 540, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (97, 634, 4, 0, 15);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (98, 743, 1, 0, 10);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (99, 520, 3, 0, 5);
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (100, 634, 2, 0, 15);
+
+commit;
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (51, 215, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (52, 289, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (53, 184, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (54, 234, 1, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (55, 179, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (56, 156, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (57, 267, 3, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (58, 215, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (59, 290, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (60, 128, 1, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (61, 225, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (62, 214, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (63, 178, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (64, 245, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (65, 118, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (66, 276, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (67, 210, 3, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (68, 256, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (69, 235, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (70, 150, 1, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (71, 258, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (72, 277, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (73, 208, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (74, 191, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (75, 243, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (76, 238, 1, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (77, 212, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (78, 286, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (79, 165, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (80, 272, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (81, 218, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (82, 264, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (83, 225, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (84, 185, 1, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (85, 145, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (86, 134, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (87, 221, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (88, 207, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (89, 276, 1, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (90, 160, 3, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (91, 208, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (92, 229, 3, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (93, 285, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (94, 154, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (95, 271, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (96, 222, 3, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (97, 253, 1, 0, 5);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (98, 142, 1, 0, 10);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (99, 119, 3, 0, 0);
+ 
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) 
+VALUES (100, 237, 3, 0, 5);
+
+commit;
+
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (119, 618, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (120, 619, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (121, 620, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (122, 621, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (123, 622, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (124, 623, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (125, 624, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (126, 625, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (127, 626, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (128, 627, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (129, 628, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (130, 629, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (131, 630, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (132, 631, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (133, 632, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (134, 633, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (135, 634, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (136, 635, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (137, 636, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (138, 637, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (139, 638, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (140, 639, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (141, 640, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (142, 641, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (143, 642, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (144, 643, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (145, 644, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (146, 645, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (147, 646, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (148, 647, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (101, 648, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (120, 649, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (101, 600, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (102, 601, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (103, 602, 3, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (103, 603, 1, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (103, 604, 2, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (104, 605, 4, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (104, 606, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (105, 607, 1, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (106, 608, 3, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (107, 609, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (107, 610, 1, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (108, 611, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (108, 612, 3, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (109, 613, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (109, 614, 2, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (110, 615, 3, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (110, 616, 4, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (111, 617, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (111, 618, 1, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (112, 619, 3, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (113, 620, 4, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (113, 621, 2, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (114, 622, 1, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (114, 623, 3, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (115, 624, 4, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (115, 625, 2, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (115, 626, 1, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (116, 627, 2, 0, 10);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (117, 628, 3, 0, 15);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (117, 629, 4, 0, 0);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (118, 630, 1, 0, 5);
+INSERT INTO ORDER_DETAIL (id_order, id_book, quantity, price, discount) VALUES (118, 631, 2, 0, 10);
+
+
+select * from order_detail;
+select * from order_tam;
+select * from book;
+ ----------------------------
+ -- Update pret ORDER_DETAIL cu cel din book
+BEGIN
+    FOR order_record IN (SELECT id_order, id_book FROM ORDER_DETAIL) LOOP
+        UPDATE ORDER_DETAIL
+        SET price = (SELECT price FROM BOOK WHERE id_book = order_record.id_book)
+        WHERE id_order = order_record.id_order AND id_book = order_record.id_book;
+    END LOOP;
+
+    COMMIT;
+END;
+/
+--Update total_price ORDER_TAM
+BEGIN
+    FOR order_record IN (SELECT id_order FROM ORDER_TAM) LOOP
+        UPDATE ORDER_TAM
+        SET total_price = (SELECT SUM(price * quantity * (1-discount/100)) FROM ORDER_DETAIL WHERE id_order = order_record.id_order GROUP BY id_order)
+        WHERE id_order = order_record.id_order;
+    END LOOP;
+    
+    COMMIT;
+END;
+/
+
+--vizualizarile create pentru a permite inserarea in baza de date depozit
+CREATE OR REPLACE VIEW AUTHOR_VW AS
+   SELECT id_author, firstName, lastName 
+   FROM AUTHOR;
+
+CREATE OR REPLACE VIEW CATEGORY_VW AS
+   SELECT id_category, name 
+   FROM CATEGORY;
+
+CREATE OR REPLACE VIEW PUBLISHER_VW AS
+   SELECT id_publisher, name, email 
+   FROM PUBLISHER;
+
+CREATE OR REPLACE VIEW USER_VW AS
+   SELECT id_user, email, name, gender, type
+   FROM USER_TAM;
+
+CREATE OR REPLACE VIEW BOOK_VW AS
+   SELECT b.id_book, b.name, b.stock_status, b.year, b.description, p.name publisherName,
+   s.name serieName, a.firstName||' '||a.lastName authorName, c.name categoryName
+   FROM BOOK b 
+   JOIN PUBLISHER p ON b.id_publisher = p.id_publisher
+   JOIN SERIE s ON b.id_serie = s.id_serie
+   JOIN AUTHOR a ON b.id_author = a.id_author
+   JOIN CATEGORY c ON b.id_category = c.id_category;
+
+CREATE OR REPLACE VIEW ADDRESS_VW AS
+    SELECT a.id_address,co.name country, a.street,ci.name city
+    FROM ADDRESS a JOIN CITY ci ON a.id_city = ci.id_city
+    JOIN COUNTRY co ON ci.id_country = co.id_country; 
+
+select * from ORDER_TAM;
+desc order_tam;
+
+CREATE OR REPLACE VIEW ORDER_WITH_DETAILS_VW AS
+    SELECT
+    o.id_user,
+    od.id_book,
+    b.id_publisher,
+    o.id_address,
+    b.id_category,
+    b.id_author,
+    o.order_date,
+    od.quantity,
+    (od.price - (od.discount * od.price) / 100) price
+    FROM ORDER_DETAIL od
+    JOIN ORDER_TAM o ON od.id_order = o.id_order
+    JOIN BOOK b ON od.id_book = b.id_book
+    WHERE upper(o.status) = upper('Completed');
+
+
+--Crearea bazei de date depozit și a utilizatorilor 
+--Popularea cu informații a bazei de date depozit folosind ca sursă datele din baza de date OLTP 
+-- Definirea constrângerilor
+-- Definirea indecșilor 
+GRANT CREATE JOB TO master;
+GRANT MANAGE SCHEDULER TO master;
+
+create user DWBI_olap identified by DWBI_olap;
+grant  master to DWBI_olap;
+grant  UNLIMITED TABLESPACE  to  DWBI_olap;
+
+GRANT SELECT ON DWBI_miruna.AUTHOR_VW TO DWBI_olap;
+GRANT SELECT ON DWBI_miruna.CATEGORY_VW TO DWBI_olap;
+GRANT SELECT ON DWBI_miruna.PUBLISHER_VW TO DWBI_olap;
+GRANT SELECT ON DWBI_miruna.USER_VW TO DWBI_olap;
+GRANT SELECT ON DWBI_miruna.BOOK_VW TO DWBI_olap;
+GRANT SELECT ON DWBI_miruna.ADDRESS_VW TO DWBI_olap;
+GRANT SELECT ON DWBI_miruna.ORDER_WITH_DETAILS_VW TO DWBI_olap;
+
+ELECT * FROM DWBI_miruna.AUTHOR_VW;
+SELECT * FROM DWBI_miruna.CATEGORY_VW;
+SELECT * FROM DWBI_miruna.PUBLISHER_VW;
+SELECT * FROM DWBI_miruna.USER_VW;
+SELECT * FROM DWBI_miruna.BOOK_VW;
+SELECT * FROM DWBI_miruna.ADDRESS_VW;
+SELECT * FROM DWBI_miruna.ORDER_WITH_DETAILS_VW;
+
+CREATE TABLE AUTHOR (
+    id_author NUMBER(5),
+    firstName VARCHAR(255),
+    lastName VARCHAR(255));
+ALTER TABLE AUTHOR
+ADD CONSTRAINT pk_author PRIMARY KEY(id_author) DISABLE VALIDATE;
+--
+--inainte de inserare se va da enable la constrangere
+--
+ALTER TABLE AUTHOR
+ENABLE CONSTRAINT pk_author;
+
+INSERT INTO AUTHOR (id_author, firstName, lastName)
+SELECT id_author, firstName, lastName
+FROM DWBI_miruna.AUTHOR_VW;
+
+ALTER TABLE AUTHOR
+DISABLE VALIDATE CONSTRAINT pk_author;
+
+COMMIT;
+
+select * from author;
+--
+CREATE TABLE CATEGORY (
+    id_category NUMBER(5),
+    name VARCHAR(255));
+ALTER TABLE CATEGORY
+ADD CONSTRAINT pk_category PRIMARY KEY(id_category) DISABLE VALIDATE;
+--  
+ALTER TABLE CATEGORY
+ENABLE CONSTRAINT pk_category;
+
+INSERT INTO CATEGORY (id_category, name)
+SELECT id_category, name
+FROM DWBI_miruna.CATEGORY_VW; 
+
+ALTER TABLE CATEGORY
+DISABLE VALIDATE CONSTRAINT pk_category;
+
+select * from category;
+--
+
+CREATE TABLE PUBLISHER (
+    id_publisher NUMBER(5),
+    name VARCHAR(255),
+    email VARCHAR(255));
+ALTER TABLE PUBLISHER
+ADD CONSTRAINT pk_publisher PRIMARY KEY(id_publisher) DISABLE VALIDATE; 
+--
+ALTER TABLE PUBLISHER
+ENABLE CONSTRAINT pk_publisher;
+
+INSERT INTO PUBLISHER(id_publisher, name, email)
+SELECT id_publisher, name, email
+FROM DWBI_miruna.PUBLISHER_VW;
+
+ALTER TABLE PUBLISHER
+DISABLE VALIDATE CONSTRAINT pk_publisher;
+
+select * from PUBLISHER;
+--
+
+
+CREATE TABLE USER_TAM (
+    id_user NUMBER(5), 
+    email VARCHAR2(100),
+    name VARCHAR2(255),
+    gender VARCHAR2(5),
+    type VARCHAR2(20)
+);
+ALTER TABLE USER_TAM
+ADD CONSTRAINT pk_user PRIMARY KEY(id_user) DISABLE NOVALIDATE;
+CREATE BITMAP INDEX bmp_user_type --am doua posibilitati 
+ON USER_TAM(type);
+--
+ALTER TABLE USER_TAM
+ENABLE CONSTRAINT pk_user;
+
+INSERT INTO USER_TAM(id_user, email, name, gender, type)
+SELECT id_user, email, name, gender, type
+FROM DWBI_miruna.USER_VW;
+
+ALTER TABLE USER_TAM
+DISABLE VALIDATE CONSTRAINT pk_user;
+
+SELECT * FROM USER_TAM;
+--  
+
+CREATE TABLE BOOK (
+    id_book NUMBER(5),
+    name VARCHAR(255),
+    stock_status NUMBER(10),
+    year NUMBER(5),
+    description VARCHAR(255),
+    publisher_name VARCHAR(255),
+    serie_name VARCHAR(255),
+    author_name VARCHAR(450),
+    category_name VARCHAR(255)
+);
+ALTER TABLE BOOK
+ADD CONSTRAINT pk_book PRIMARY KEY(id_book) DISABLE NOVALIDATE; 
+--
+ALTER TABLE BOOK
+ENABLE CONSTRAINT pk_book;
+
+INSERT INTO BOOK(id_book,name,stock_status,year,description,publisher_name,serie_name,author_name,category_name)
+SELECT id_book,name,stock_status,year,description,publishername,seriename,authorname,categoryname
+FROM DWBI_miruna.BOOK_VW;
+
+ALTER TABLE BOOK
+DISABLE VALIDATE CONSTRAINT pk_book;
+
+SELECT * FROM BOOK;
+--
+CREATE TABLE ADDRESS (
+    id_address NUMBER(5),
+    country VARCHAR2(25),
+    street VARCHAR2(25),
+    city VARCHAR2(25)
+);
+ALTER TABLE ADDRESS
+ADD CONSTRAINT pk_address PRIMARY KEY(id_address) DISABLE VALIDATE; 
+--
+ALTER TABLE ADDRESS
+ENABLE CONSTRAINT pk_address;
+
+INSERT INTO ADDRESS(id_address,country,street,city)
+SELECT id_address,country,street,city
+FROM DWBI_miruna.ADDRESS_VW; 
+
+ALTER TABLE ADDRESS
+DISABLE VALIDATE CONSTRAINT pk_address;
+
+COMMIT;
+
+SELECT * FROM ADDRESS;
+--
+
+--DROP TABLE TIME_TAM;
+CREATE TABLE TIME_TAM(
+   	id_timp DATE, 
+	an NUMBER(4,0), 
+	trimestru NUMBER(1,0), 
+    trimestru_an VARCHAR2(10 BYTE), 
+    luna_nume VARCHAR2(30 BYTE), 
+	luna_an VARCHAR2(10 BYTE), 
+    luna_number NUMBER(2,0),
+    saptamana_luna_number NUMBER(1,0), 
+	saptamana_luna_an VARCHAR2(10 BYTE), 	
+	data DATE
+);
+ALTER TABLE TIME_TAM
+ADD CONSTRAINT pk_time PRIMARY KEY(id_timp) DISABLE VALIDATE; 
+--
+ALTER TABLE TIME_TAM
+ENABLE CONSTRAINT pk_time;
+--
+/
+create or replace procedure 
+  TIME_EXTENSION (start_date date,
+                     end_date date)
+AS
+begin
+insert into TIME_TAM
+select 
+data id_timp,
+extract(year from data) an,
+to_number(to_char(data,'q')) trimestru,
+to_char(data,'yyyy-q') trimestru_an,
+to_char(data,'Month') luna_nume,
+to_char(data,'yyyy-mm') luna_an,
+to_number(to_char(data,'mm')) luna_number,
+to_number(to_char(data,'w')) saptamana_luna_number,
+to_char(data,'yyyy-mm-w') saptamana_luna_an,
+data
+from 
+( select trunc(start_date+rownum-1) data    
+  from   dual
+  connect by start_date+rownum-1 <= end_date);
+end;
+/
+BEGIN
+  TIME_EXTENSION(
+    TO_DATE('01.01.2023', 'dd.mm.yyyy'),
+    TO_DATE('16.01.2025', 'dd.mm.yyyy')
+  );
+END;
+/
+ALTER TABLE time_tam
+ENABLE CONSTRAINT PK_TIME;
+BEGIN
+  TIME_EXTENSION(
+    TO_DATE('17.01.2025', 'dd.mm.yyyy'),
+    TO_DATE('16.01.2026', 'dd.mm.yyyy')
+  );
+END;
+/
+commit;
+ALTER TABLE time_tam
+DISABLE VALIDATE CONSTRAINT PK_TIME;
+
+select min(id_timp),max(id_timp),count(*)
+from  TIME_TAM;
+commit;
+/
+ALTER TABLE TIME_TAM
+DISABLE VALIDATE CONSTRAINT pk_time;
+
+select * from time_tam;
+--in olap atributul pret il vedem ca fiind rezultatul calculului dintre coloanele price si dicount din oltp.
+-- se iau doar orderurile cu statusul Completed
+-- id_time = valoarea atributului date din order 
+--DROP TABLE ORDER_WITH_DETAILS;
+CREATE TABLE ORDER_WITH_DETAILS (
+    id_user NUMBER(5),
+    id_book NUMBER(5),
+    id_publisher NUMBER(5),
+    id_address NUMBER(5),
+    id_category NUMBER(5),
+    id_author NUMBER(5),
+    id_timp DATE,
+    quantity NUMBER(10),
+    price NUMBER(10, 2)
+);
+
+
+ALTER TABLE ORDER_WITH_DETAILS
+ADD CONSTRAINT pk_order_with_details  PRIMARY KEY(id_user, id_book, id_publisher, id_address,
+id_category, id_author, id_timp) DISABLE NOVALIDATE;
+
+ALTER TABLE ORDER_WITH_DETAILS
+ENABLE CONSTRAINT pk_order_with_details;
+
+--- ID_USER ---
+ALTER TABLE USER_TAM
+ENABLE CONSTRAINT pk_user;
+
+-- ATENTIE!! Pentru a referi valoarea FK la PK din USER_TAM trebuie ca constrangerea de PK din USER_TAM sa fie ENABLE!!
+
+ALTER TABLE ORDER_WITH_DETAILS 
+ADD CONSTRAINT fk_order_with_details_user
+FOREIGN KEY (id_user) 
+REFERENCES USER_TAM(id_user) ENABLE NOVALIDATE;
+
+ALTER TABLE ORDER_WITH_DETAILS
+DISABLE NOVALIDATE CONSTRAINT pk_order_with_details;
+
+-- ID_BOOK --
+ALTER TABLE BOOK
+ENABLE CONSTRAINT pk_book;
+
+ALTER TABLE ORDER_WITH_DETAILS 
+ADD CONSTRAINT fk_order_with_details_book
+FOREIGN KEY (id_book) 
+REFERENCES BOOK(id_book) ENABLE NOVALIDATE;
+
+--- ID_PUBLISHER ---
+ALTER TABLE PUBLISHER
+MODIFY CONSTRAINT pk_publisher RELY DISABLE VALIDATE;
+
+ALTER TABLE ORDER_WITH_DETAILS 
+ADD CONSTRAINT fk_order_with_details_publisher
+FOREIGN KEY (id_publisher) 
+REFERENCES PUBLISHER(id_publisher) RELY DISABLE NOVALIDATE;
+
+--- ID_ADDRESS ---
+ALTER TABLE ADDRESS
+ENABLE CONSTRAINT pk_address;
+
+ALTER TABLE ORDER_WITH_DETAILS 
+ADD CONSTRAINT fk_order_with_details_address
+FOREIGN KEY (id_address) 
+REFERENCES ADDRESS(id_address) ENABLE NOVALIDATE;
+
+--- ID_CATEGORY ---
+ALTER TABLE CATEGORY
+MODIFY CONSTRAINT pk_category RELY DISABLE VALIDATE;
+
+ALTER TABLE ORDER_WITH_DETAILS
+ADD CONSTRAINT fk_order_with_details_category
+FOREIGN KEY (id_category)
+REFERENCES CATEGORY(id_category) RELY DISABLE NOVALIDATE;
+
+--- ID_AUTHOR ---
+ALTER TABLE AUTHOR
+MODIFY CONSTRAINT pk_author RELY DISABLE VALIDATE;
+
+ALTER TABLE ORDER_WITH_DETAILS 
+ADD CONSTRAINT fk_order_with_details_author
+FOREIGN KEY (id_author) 
+REFERENCES AUTHOR(id_author) RELY DISABLE NOVALIDATE;
+
+--- ID_TIMP ---
+ALTER TABLE TIME_TAM
+MODIFY CONSTRAINT pk_time RELY DISABLE VALIDATE;
+
+ALTER TABLE ORDER_WITH_DETAILS
+ADD CONSTRAINT fk_order_with_details_time
+FOREIGN KEY (id_timp)
+REFERENCES TIME_TAM(id_timp) RELY DISABLE NOVALIDATE;
+
+--
+INSERT INTO ORDER_WITH_DETAILS(id_user,id_book,id_publisher,id_address,id_category,id_author,id_timp,quantity,price)
+SELECT id_user,id_book,id_publisher,id_address,id_category,id_author,order_date,quantity,price
+FROM DWBI_miruna.ORDER_WITH_DETAILS_VW;
+commit;
+
+SELECT * FROM ORDER_WITH_DETAILS;
+
+---verificare constrangeri
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'AUTHOR';
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'CATEGORY';
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'PUBLISHER';
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'USER_TAM';
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'BOOK';
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'ADDRESS';
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'TIME_TAM';
+--WHERE TABLE_NAME = 'PUBLISHER';
+
+SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE, STATUS, RELY, VALIDATED
+FROM USER_CONSTRAINTS
+WHERE TABLE_NAME = 'ORDER_WITH_DETAILS';
+
+--INDEX VERRIFICARE
+SELECT INDEX_NAME, INDEX_TYPE, TABLE_NAME
+FROM USER_INDEXES
+WHERE TABLE_NAME = 'USER_TAM';
+
+/*
+6. Definirea indecșilor și a cererilor SQL însoțite de planul de execuție al acestora (din 
+care să reiasă ca optimizorul utilizează eficient indecșii definiți) 
+*/
+--CERINTA 6 - index bitmap pe type tabela user_tam
+--ALTER SESSION SET "_optimizer_gather_stats_on_load"=FALSE;
+--Sa se afle care categorie de carti a generat cele mai multe vânzari
+--în rândul persoanelor fizice în anul trecut.
+DROP INDEX bmp_user_type;
+CREATE BITMAP INDEX bmp_user_type ON USER_TAM(type);
+ANALYZE INDEX bmp_user_type COMPUTE STATISTICS;
+
+-- caz 1
+SELECT 
+    (SELECT categ.name
+     FROM CATEGORY categ
+     WHERE categ.id_category = 
+         (SELECT od.id_category
+          FROM ORDER_WITH_DETAILS od
+          JOIN USER_TAM user_ ON od.id_user = user_.id_user
+          JOIN TIME_TAM t ON od.id_timp = t.id_timp
+          WHERE user_.type = 'Persoana fizica'
+            AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+          GROUP BY od.id_category
+          ORDER BY SUM(od.quantity) DESC
+          FETCH FIRST 1 ROW ONLY)
+    ) AS category_name,
+    
+    (SELECT SUM(od.quantity)
+     FROM ORDER_WITH_DETAILS od
+     JOIN USER_TAM user_ ON od.id_user = user_.id_user
+     JOIN TIME_TAM t ON od.id_timp = t.id_timp
+     WHERE user_.type = 'Persoana fizica'
+       AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+       AND od.id_category = 
+           (SELECT od_sub.id_category
+            FROM ORDER_WITH_DETAILS od_sub
+            JOIN USER_TAM user_sub ON od_sub.id_user = user_sub.id_user
+            JOIN TIME_TAM t_sub ON od_sub.id_timp = t_sub.id_timp
+            WHERE user_sub.type = 'Persoana fizica'
+              AND t_sub.an = EXTRACT(YEAR FROM SYSDATE) - 1
+            GROUP BY od_sub.id_category
+            ORDER BY SUM(od_sub.quantity) DESC
+            FETCH FIRST 1 ROW ONLY)
+    ) AS total_quantity
+FROM dual;
+
+--caz 2
+SELECT categ.name AS category_name, SUM(od.quantity) AS total_quantity
+FROM ORDER_WITH_DETAILS od
+JOIN USER_TAM user_ ON od.id_user = user_.id_user
+JOIN CATEGORY categ ON od.id_category = categ.id_category
+JOIN TIME_TAM t ON od.id_timp = t.id_timp
+WHERE user_.type = 'Persoana fizica'
+  AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+GROUP BY categ.name, categ.id_category
+ORDER BY total_quantity DESC
+FETCH FIRST 1 ROW ONLY;
+
+-------------------------------
+--- planurile pentru caz 2--------------
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'statement_ex6_1' 
+FOR 
+SELECT categ.name AS category_name, SUM(od.quantity) AS total_quantity
+FROM ORDER_WITH_DETAILS od
+JOIN USER_TAM user_ ON od.id_user = user_.id_user
+JOIN CATEGORY categ ON od.id_category = categ.id_category
+JOIN TIME_TAM t ON od.id_timp = t.id_timp
+WHERE user_.type = 'Persoana fizica'
+  AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+GROUP BY categ.name
+ORDER BY total_quantity DESC
+FETCH FIRST 1 ROW ONLY;
+
+--cost 16
+SELECT plan_table_output 
+FROM 
+table(dbms_xplan.display('plan_table', 'statement_ex6_1','serial'));
+---
+
+
+
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'statement_ex6_20' 
+FOR 
+SELECT /*+ NO_INDEX(user_ bmp_user_type) */
+categ.name AS category_name, SUM(od.quantity) AS total_quantity
+FROM ORDER_WITH_DETAILS od
+JOIN USER_TAM user_ ON od.id_user = user_.id_user
+JOIN CATEGORY categ ON od.id_category = categ.id_category
+JOIN TIME_TAM t ON od.id_timp = t.id_timp
+WHERE user_.type = 'Persoana fizica'
+  AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+GROUP BY categ.name
+ORDER BY total_quantity DESC
+FETCH FIRST 1 ROW ONLY;
+
+--cost 17
+SELECT plan_table_output 
+FROM 
+table(dbms_xplan.display('plan_table', 'statement_ex6_20','serial'));
+
+---
+
+
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'statement_ex6_2' 
+FOR 
+SELECT /*+ INDEX(user_ bmp_user_type) */
+categ.name AS category_name, SUM(od.quantity) AS total_quantity
+FROM ORDER_WITH_DETAILS od
+JOIN USER_TAM user_ ON od.id_user = user_.id_user
+JOIN CATEGORY categ ON od.id_category = categ.id_category
+JOIN TIME_TAM t ON od.id_timp = t.id_timp
+WHERE user_.type = 'Persoana fizica'
+  AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+GROUP BY categ.name
+ORDER BY total_quantity DESC
+FETCH FIRST 1 ROW ONLY;
+
+--cost 23
+SELECT plan_table_output 
+FROM 
+table(dbms_xplan.display('plan_table', 'statement_ex6_2','serial'));
+
+-------------------
+--------------------
+---- planurile pentru caz 1  --
+-------------------
+explain plan
+set statement_id = 'statement_ex6_5'
+for
+SELECT 
+    (SELECT categ.name
+     FROM CATEGORY categ
+     WHERE categ.id_category = 
+         (SELECT od.id_category
+          FROM ORDER_WITH_DETAILS od
+          JOIN USER_TAM user_ ON od.id_user = user_.id_user
+          JOIN TIME_TAM t ON od.id_timp = t.id_timp
+          WHERE user_.type = 'Persoana fizica'
+            AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+          GROUP BY od.id_category
+          ORDER BY SUM(od.quantity) DESC
+          FETCH FIRST 1 ROW ONLY)
+    ) AS category_name,
+    
+    (SELECT SUM(od.quantity)
+     FROM ORDER_WITH_DETAILS od
+     JOIN USER_TAM user_ ON od.id_user = user_.id_user
+     JOIN TIME_TAM t ON od.id_timp = t.id_timp
+     WHERE user_.type = 'Persoana fizica'
+       AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+       AND od.id_category = 
+           (SELECT od_sub.id_category
+            FROM ORDER_WITH_DETAILS od_sub
+            JOIN USER_TAM user_sub ON od_sub.id_user = user_sub.id_user
+            JOIN TIME_TAM t_sub ON od_sub.id_timp = t_sub.id_timp
+            WHERE user_sub.type = 'Persoana fizica'
+              AND t_sub.an = EXTRACT(YEAR FROM SYSDATE) - 1
+            GROUP BY od_sub.id_category
+            ORDER BY SUM(od_sub.quantity) DESC
+            FETCH FIRST 1 ROW ONLY)
+    ) AS total_quantity
+FROM dual;
+
+--cost 40
+SELECT plan_table_output 
+FROM 
+table(dbms_xplan.display('plan_table', 'statement_ex6_5','serial'));
+
+
+
+explain plan
+set statement_id = 'statement_ex6_6'
+for
+SELECT 
+    (SELECT categ.name
+     FROM CATEGORY categ
+     WHERE categ.id_category = 
+         (SELECT  /*+ INDEX(user_ bmp_user_type) */ od.id_category
+          FROM ORDER_WITH_DETAILS od
+          JOIN USER_TAM user_ ON od.id_user = user_.id_user
+          JOIN TIME_TAM t ON od.id_timp = t.id_timp
+          WHERE user_.type = 'Persoana fizica'
+            AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+          GROUP BY od.id_category
+          ORDER BY SUM(od.quantity) DESC
+          FETCH FIRST 1 ROW ONLY)
+    ) AS category_name,
+    
+    (SELECT  /*+ INDEX(user_ bmp_user_type) */ SUM(od.quantity)
+     FROM ORDER_WITH_DETAILS od
+     JOIN USER_TAM user_ ON od.id_user = user_.id_user
+     JOIN TIME_TAM t ON od.id_timp = t.id_timp
+     WHERE user_.type = 'Persoana fizica'
+       AND t.an = EXTRACT(YEAR FROM SYSDATE) - 1
+       AND od.id_category = 
+           (SELECT  /*+ INDEX(user_sub bmp_user_type) */ od_sub.id_category
+            FROM ORDER_WITH_DETAILS od_sub
+            JOIN USER_TAM user_sub ON od_sub.id_user = user_sub.id_user
+            JOIN TIME_TAM t_sub ON od_sub.id_timp = t_sub.id_timp
+            WHERE user_sub.type = 'Persoana fizica'
+              AND t_sub.an = EXTRACT(YEAR FROM SYSDATE) - 1
+            GROUP BY od_sub.id_category
+            ORDER BY SUM(od_sub.quantity) DESC
+            FETCH FIRST 1 ROW ONLY)
+    ) AS total_quantity
+FROM dual;
+
+--cost 59
+SELECT plan_table_output 
+FROM 
+table(dbms_xplan.display('plan_table', 'statement_ex6_6','serial'));
+
+/*
+7. Definirea obiectelor de tip dimensiune, validarea acestora (din care să reiasă că datele 
+respectă constrângerile impuse prin aceste tipuri de obiecte)
+*/
+--CERINTA 7 - OBIECTELE DIMNSIUNE
+--select * from address;
+--pentru adresa
+CREATE DIMENSION address_dim
+LEVEL address         IS (address.id_address)
+LEVEL country         IS (address.country)
+LEVEL city            IS (address.city)
+HIERARCHY h_address (
+	address 	CHILD OF
+	city        CHILD OF
+    country  );
+
+EXECUTE DBMS_DIMENSION.VALIDATE_DIMENSION(UPPER('address_dim'),FALSE,TRUE,'st_id_address');
+
+SELECT *
+FROM   DIMENSION_EXCEPTIONS
+WHERE STATEMENT_ID = 'st_id_address';
+
+SELECT *
+FROM address
+WHERE ROWID IN (SELECT BAD_ROWID
+                FROM DIMENSION_EXCEPTIONS
+                WHERE STATEMENT_ID = 'st_id_address');
+
+-- pentru timp
+CREATE DIMENSION timp_dim
+LEVEL luna      IS (time_tam.luna_an)
+LEVEL trimestru IS (time_tam.trimestru_an)
+LEVEL an        IS (time_tam.an)
+HIERARCHY h_timp(
+ luna       CHILD OF
+ trimestru  CHILD OF
+ an);
+
+EXECUTE DBMS_DIMENSION.VALIDATE_DIMENSION(UPPER('timp_dim'),FALSE,TRUE,'st_id_timp');
+
+SELECT *
+FROM   DIMENSION_EXCEPTIONS
+WHERE STATEMENT_ID = 'st_id_timp';
+
+SELECT *
+FROM time_tam
+WHERE ROWID IN (SELECT BAD_ROWID
+                FROM DIMENSION_EXCEPTIONS
+                WHERE STATEMENT_ID = 'st_id_timp');
+
+/*
+8.  Definirea partițiilor; definirea cererilor SQL însoțite de planul de execuție al acestora 
+din care să reiasă ca optimizorul utilizează eficient partițiile
+*/
+--CERINTA 8
+--Sa se afiseze detalii despre topul celor mai vândute 2 carti per editura
+--în primul trimestru al anului 2024 (primele 3 luni).
+--Afisati numele, anul, categoria, descrierea c?r?ii, numele editurii si al autorului.
+
+--Tabelul Order_With_Detail va fi partitionat în functie de timp
+--per trimestru (tabel TIME),folosindu-se partitionarea prin ordonare.
+CREATE TABLE ORDER_WITH_DETAILS_PART 
+PARTITION BY RANGE (id_timp)
+(
+    PARTITION trim1_2024 VALUES LESS THAN (TO_DATE('01-04-2024', 'DD-MM-YYYY')),
+    PARTITION trim2_2024 VALUES LESS THAN (TO_DATE('01-07-2024', 'DD-MM-YYYY')),
+    PARTITION trim3_2024 VALUES LESS THAN (TO_DATE('01-10-2024', 'DD-MM-YYYY')),
+    PARTITION trim4_2024 VALUES LESS THAN (TO_DATE('01-01-2025', 'DD-MM-YYYY')),
+    PARTITION trim1_2025 VALUES LESS THAN (TO_DATE('01-04-2025', 'DD-MM-YYYY')),
+    PARTITION trim2_2025 VALUES LESS THAN (TO_DATE('01-07-2025', 'DD-MM-YYYY')),
+    PARTITION trim3_2025 VALUES LESS THAN (TO_DATE('01-10-2025', 'DD-MM-YYYY')),
+    PARTITION trim4_2025 VALUES LESS THAN (TO_DATE('01-01-2026', 'DD-MM-YYYY')),
+    PARTITION order_rest VALUES LESS THAN (MAXVALUE)
+)
+AS
+SELECT *
+FROM ORDER_WITH_DETAILS;
+
+SELECT *
+FROM ORDER_WITH_DETAILS_PART;
+ANALYZE TABLE ORDER_WITH_DETAILS_PART COMPUTE STATISTICS;
+
+--cerere sql de inceput 
+select * from       
+(SELECT 
+    SUM(quantity) AS sum_val,
+    p.name AS publisher_name,
+    b.name AS book_name,
+    b.year,
+    b.category_name,
+    b.description,
+    b.author_name,
+    dense_rank() over (partition by p.name order by SUM(quantity) desc) as rank
+FROM
+    ORDER_WITH_DETAILS_PART o
+    JOIN
+    PUBLISHER p ON o.id_publisher = p.id_publisher
+    JOIN
+    BOOK b ON o.id_book = b.id_book
+where 
+    o.id_timp BETWEEN TO_DATE('01-01-2024', 'DD-MM-YYYY') 
+                       AND TO_DATE('31-03-2024', 'DD-MM-YYYY')
+group by 
+    p.name,b.name,b.year,b.category_name,b.description,b.author_name)
+    where rank<=2;
+--------------------------
+
+--cu partitii
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'ex_8_top_1'
+FOR
+select * from       
+(SELECT 
+    SUM(quantity) AS sum_val,
+    p.name AS publisher_name,
+    b.name AS book_name,
+    b.year,
+    b.category_name,
+    b.description,
+    b.author_name,
+    dense_rank() over (partition by p.name order by SUM(quantity) desc) as rank
+FROM
+    ORDER_WITH_DETAILS_PART o
+    JOIN
+    PUBLISHER p ON o.id_publisher = p.id_publisher
+    JOIN
+    BOOK b ON o.id_book = b.id_book
+where 
+    o.id_timp BETWEEN TO_DATE('01-01-2024', 'DD-MM-YYYY') 
+                       AND TO_DATE('31-03-2024', 'DD-MM-YYYY')
+group by 
+    p.name,b.name,b.year,b.category_name,b.description,b.author_name)
+    where rank<=2;
+
+--cost 19 
+SELECT plan_table_output  
+FROM  
+table(dbms_xplan.display('plan_table','ex_8_top_1','serial'));  
+
+
+--fara partitii
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'ex_8_top_fara_part'
+FOR
+select * from       
+(SELECT 
+    SUM(quantity) AS sum_val,
+    p.name AS publisher_name,
+    b.name AS book_name,
+    b.year,
+    b.category_name,
+    b.description,
+    b.author_name,
+    dense_rank() over (partition by p.name order by SUM(quantity) desc) as rank
+FROM
+    ORDER_WITH_DETAILS o
+    JOIN
+    PUBLISHER p ON o.id_publisher = p.id_publisher
+    JOIN
+    BOOK b ON o.id_book = b.id_book
+where 
+    o.id_timp BETWEEN TO_DATE('01-01-2024', 'DD-MM-YYYY') 
+                       AND TO_DATE('31-03-2024', 'DD-MM-YYYY')
+group by 
+    p.name,b.name,b.year,b.category_name,b.description,b.author_name)
+    where rank<=2;
+
+--cost 15 
+SELECT plan_table_output  
+FROM  
+table(dbms_xplan.display('plan_table','ex_8_top_fara_part','serial'));  
+
+
+--cu impunere de folosire a partitiei pentru tabela cu partitii
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'ex_8_top_impus'
+FOR
+select * from       
+(SELECT 
+    SUM(quantity) AS sum_val,
+    p.name AS publisher_name,
+    b.name AS book_name,
+    b.year,
+    b.category_name,
+    b.description,
+    b.author_name,
+    dense_rank() over (partition by p.name order by SUM(quantity) desc) as rank
+FROM
+    ORDER_WITH_DETAILS_PART PARTITION(trim1_2024) o
+    JOIN
+    PUBLISHER p ON o.id_publisher = p.id_publisher
+    JOIN
+    BOOK b ON o.id_book = b.id_book
+group by 
+    p.name,b.name,b.year,b.category_name,b.description,b.author_name)
+    where rank<=2;
+
+--cost=19
+SELECT plan_table_output
+FROM   table(dbms_xplan.display('plan_table','ex_8_top_impus','serial'));
+
+-----------
+
+/*
+ 9.Optimizarea cererii SQL propusă în etapa de analiză 
+planul de execuție ales de optimizorul bazat pe cost
+ sugestii de optimizare a cererii, specificând planul de execuție obținut 
+*/
+
+-- CERINTA 9
+--Obtineti cei mai bine vânduti 4 autori (sa se afiseze pret * cantitate) per orasele: Bucuresti, Barcelona, Milano, Lyon, Munhen, Mumbai si per trimestru, astfel:
+--valoarea totala a vânzarilor pentru fiecare dintre cei mai bine 4 vânduti autori la nivel de oras ?i trimestru.
+--valoarea totala a vânzarilor pentru fiecare dintre cei mai bine 4 vânduti autori la nivel de oras indiferent de trimestru.
+--valoarea totala a vânzarilor pentru fiecare dintre cei mai bine 4 vânduti autori indiferent de oras si trimestru.
+--valoarea totala a vânzarilor indiferent de acest tip de autori, oras si trimestru
+--Se doreste si vizualizarea unui clasament in functie de autori, oras, trimestru,
+--dar si un clasament doar per oras cand valoarea totala a vanzarilor este pe toate nivelele,
+--in rest se va face clasarea doar dupa valoarea totala.
+--La aceasta situatie sa se adauge si un clasament per procente.
+--Mai mult, sa fie eliminate liniile duplicat 
+select * from author;
+
+---cererea prima care nu e optimizata
+WITH ranked_authors AS (
+    SELECT 
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru
+),
+filtered_authors AS (
+    SELECT autor, city
+    FROM ranked_authors
+    WHERE rank <= 4
+)
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    CASE 
+        WHEN GROUPING(ra.city) = 0 THEN ra.city
+        ELSE 'ALL CITIES'
+    END AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.city), GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    
+    CASE
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY ra.city 
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=1 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=3 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=7 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            ELSE NULL
+        END AS ranking,
+    CASE 
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+           PERCENT_RANK() OVER (
+                PARTITION BY ra.city 
+                ORDER BY ROUND(SUM(ra.valoare_totala), 1)
+            )
+        ELSE NULL
+    END AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    GROUPING(ra.city) AS "G_city",
+    GROUPING_ID(ra.autor, ra.trimestru, ra.city) AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY (ra.autor, ra.trimestru, ra.city)
+
+union --eliminat city
+
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    'ALL CITIES' AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    DENSE_RANK() OVER (
+        PARTITION BY GROUPING_ID(ra.autor, ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    )
+    AS ranking,
+    0 AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    1 AS "G_city",
+    1 AS grouping_id --1
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY (ra.autor, ra.trimestru)
+
+union --eliminam trimestru
+
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    'ALL CITIES' AS city,
+    'ALL TRIMESTERS' AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.autor)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    DENSE_RANK() OVER (
+        PARTITION BY GROUPING_ID(ra.autor)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    )
+    AS ranking,
+     0 AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    1 AS "G_trim",
+    1 AS "G_city",
+    3 AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY (ra.autor)
+
+union -- fara nimeni
+
+SELECT 
+    'ALL AUTHORS' AS autor,
+    'ALL CITIES' AS city,
+    'ALL TRIMESTERS' AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    max(1) AS rank_per_group,
+    max(1) AS ranking,
+    max(0) AS percent_rank_value,
+    max(1) AS "G_auth", 
+    max(1) AS "G_trim",
+    max(1) AS "G_city",
+    7 AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city;
+------stop cerere neoptimizata
+
+
+--plan cerere neoptimizata
+ANALYZE TABLE ORDER_WITH_DETAILS COMPUTE STATISTICS; 
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'ex_9_neoptim'
+FOR
+WITH ranked_authors AS (
+    SELECT 
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru
+),
+filtered_authors AS (
+    SELECT autor, city
+    FROM ranked_authors
+    WHERE rank <= 4
+)
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    CASE 
+        WHEN GROUPING(ra.city) = 0 THEN ra.city
+        ELSE 'ALL CITIES'
+    END AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.city), GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    
+    CASE
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY ra.city 
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=1 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=3 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=7 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            ELSE NULL
+        END AS ranking,
+    CASE 
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+           PERCENT_RANK() OVER (
+                PARTITION BY ra.city 
+                ORDER BY ROUND(SUM(ra.valoare_totala), 1)
+            )
+        ELSE NULL
+    END AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    GROUPING(ra.city) AS "G_city",
+    GROUPING_ID(ra.autor, ra.trimestru, ra.city) AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY (ra.autor, ra.trimestru, ra.city)
+
+union --eliminat city
+
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    'ALL CITIES' AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    DENSE_RANK() OVER (
+        PARTITION BY GROUPING_ID(ra.autor, ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    )
+    AS ranking,
+    0 AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    1 AS "G_city",
+    1 AS grouping_id --1
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY (ra.autor, ra.trimestru)
+
+union --eliminam trimestru
+
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    'ALL CITIES' AS city,
+    'ALL TRIMESTERS' AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.autor)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    DENSE_RANK() OVER (
+        PARTITION BY GROUPING_ID(ra.autor)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    )
+    AS ranking,
+     0 AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    1 AS "G_trim",
+    1 AS "G_city",
+    3 AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY (ra.autor)
+
+union -- fara nimeni
+
+SELECT 
+    'ALL AUTHORS' AS autor,
+    'ALL CITIES' AS city,
+    'ALL TRIMESTERS' AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    1 AS rank_per_group,
+    1 AS ranking,
+    0 AS percent_rank_value,
+    1 AS "G_auth", 
+    1 AS "G_trim",
+    1 AS "G_city",
+    7 AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city;
+
+--cost 27
+SELECT plan_table_output
+FROM   table(dbms_xplan.display('plan_table','ex_9_neoptim','serial'));
+
+
+
+
+
+
+-----cerere mai optimizat - rescrisa ca sa fie compatibila cu materialized view------
+
+WITH ranked_authors AS (
+    SELECT 
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru
+),
+filtered_authors AS (
+    SELECT autor, city
+    FROM ranked_authors
+    WHERE rank <= 4
+)
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    CASE 
+        WHEN GROUPING(ra.city) = 0 THEN ra.city
+        ELSE 'ALL CITIES'
+    END AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.city), GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    
+    CASE
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY ra.city 
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=1 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=3 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=7 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            ELSE NULL
+        END AS ranking,
+    CASE 
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+            PERCENT_RANK() OVER (
+                PARTITION BY ra.city 
+                ORDER BY ROUND(SUM(ra.valoare_totala), 1)
+            )
+        ELSE NULL
+    END AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    GROUPING(ra.city) AS "G_city",
+    GROUPING_ID(ra.autor, ra.trimestru, ra.city) AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY ROLLUP(ra.autor, ra.trimestru, ra.city)
+having group_id()=0
+order by GROUPING_ID(ra.autor, ra.trimestru, ra.city),rank_per_group;
+
+
+---plan cerere optimizata pentru materialized view
+---------------------------------------------------------------------------
+ANALYZE TABLE ORDER_WITH_DETAILS COMPUTE STATISTICS; 
+
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'ex_9_1'
+FOR
+WITH ranked_authors AS (
+    SELECT 
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru
+),
+filtered_authors AS (
+    SELECT autor, city
+    FROM ranked_authors
+    WHERE rank <= 4
+)
+SELECT 
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    CASE 
+        WHEN GROUPING(ra.city) = 0 THEN ra.city
+        ELSE 'ALL CITIES'
+    END AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.city), GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    
+    CASE
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY ra.city 
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=1 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=3 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=7 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            ELSE NULL
+        END AS ranking,
+    CASE 
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+            PERCENT_RANK() OVER (
+                PARTITION BY ra.city 
+                ORDER BY ROUND(SUM(ra.valoare_totala), 1)
+            )
+        ELSE NULL
+    END AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    GROUPING(ra.city) AS "G_city",
+    GROUPING_ID(ra.autor, ra.trimestru, ra.city) AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY ROLLUP(ra.autor, ra.trimestru, ra.city)
+having group_id()=0
+order by GROUPING_ID(ra.autor, ra.trimestru, ra.city),rank_per_group;
+
+
+--cost 26
+SELECT plan_table_output
+FROM   table(dbms_xplan.display('plan_table','ex_9_1','serial'));
+
+
+------------------crearea view materializat pentru a optimiza cerera de sus-----
+analyze table ORDER_WITH_DETAILS compute STATISTICS;
+analyze table ADDRESS compute STATISTICS;
+analyze table AUTHOR compute STATISTICS;
+
+--drop MATERIALIZED VIEW vm_ranked_authors;
+CREATE MATERIALIZED VIEW vm_ranked_authors
+BUILD immediate
+REFRESH complete
+ON DEMAND
+ENABLE QUERY REWRITE
+AS 
+SELECT 
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru;
+
+
+--se verifica faptul ca pentru cererea de mai jos optimizatorul va alege view-ul materializat si nu tabelele de baza
+EXPLAIN PLAN
+SET STATEMENT_ID ='ex_9_100' 
+for 
+SELECT 
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru;
+
+--cost 3 si este ales view materializat
+SELECT plan_table_output
+FROM   table(dbms_xplan.display('plan_table','ex_9_100','serial'));
+
+--iar acum se va vedea daca pentru cererea optimizata de mai sus cu cost 26 se va alege view-materializat
+EXPLAIN PLAN
+SET STATEMENT_ID ='ex_9_2' 
+for 
+WITH ranked_authors AS (
+    SELECT  
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru
+),
+filtered_authors AS (
+    SELECT autor, city
+    FROM ranked_authors
+    WHERE rank <= 4
+)
+SELECT  
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    CASE 
+        WHEN GROUPING(ra.city) = 0 THEN ra.city
+        ELSE 'ALL CITIES'
+    END AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.city), GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    
+    CASE
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY ra.city 
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=1 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=3 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=7 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            ELSE NULL
+        END AS ranking,
+    CASE 
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+            PERCENT_RANK() OVER (
+                PARTITION BY ra.city 
+                ORDER BY ROUND(SUM(ra.valoare_totala), 1)
+            )
+        ELSE NULL
+    END AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    GROUPING(ra.city) AS "G_city",
+    GROUPING_ID(ra.autor, ra.trimestru, ra.city) AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY ROLLUP(ra.autor, ra.trimestru, ra.city)
+having group_id()=0
+order by GROUPING_ID(ra.autor, ra.trimestru, ra.city),rank_per_group;
+
+--cost 13 si este folosit view-materializat
+SELECT plan_table_output
+FROM   table(dbms_xplan.display('plan_table','ex_9_2','serial'));
+
+
+---plan cu hint norewrite
+EXPLAIN PLAN
+SET STATEMENT_ID ='ex_9_3' 
+for 
+WITH ranked_authors AS (
+    SELECT   /*+ NOREWRITE */
+        o.id_author,
+        a.city,
+        aut.firstname || ' ' || aut.lastname AS autor,
+        t.trimestru,
+        ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+        ROW_NUMBER() OVER (
+            PARTITION BY a.city
+            ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+        ) AS rank
+    FROM ORDER_WITH_DETAILS o
+    JOIN ADDRESS a ON o.id_address = a.id_address
+    JOIN AUTHOR aut ON o.id_author = aut.id_author
+    JOIN TIME_TAM t ON o.id_timp = t.id_timp
+    WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+    GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru
+),
+filtered_authors AS (
+    SELECT autor, city
+    FROM ranked_authors
+    WHERE rank <= 4
+)
+SELECT   
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    CASE 
+        WHEN GROUPING(ra.city) = 0 THEN ra.city
+        ELSE 'ALL CITIES'
+    END AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.city), GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    
+    CASE
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY ra.city 
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=1 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=3 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=7 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            ELSE NULL
+        END AS ranking,
+    CASE 
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+            PERCENT_RANK() OVER (
+                PARTITION BY ra.city 
+                ORDER BY ROUND(SUM(ra.valoare_totala), 1)
+            )
+        ELSE NULL
+    END AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    GROUPING(ra.city) AS "G_city",
+    GROUPING_ID(ra.autor, ra.trimestru, ra.city) AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY ROLLUP(ra.autor, ra.trimestru, ra.city)
+having group_id()=0
+order by GROUPING_ID(ra.autor, ra.trimestru, ra.city),rank_per_group;
+
+--cost 26
+SELECT plan_table_output
+FROM   table(dbms_xplan.display('plan_table','ex_9_3','serial'));
+
+
+---plan cu hint rewrite
+EXPLAIN PLAN
+SET STATEMENT_ID ='ex_9_4' 
+for 
+WITH ranked_authors AS (
+SELECT /*+REWRITE(vm_ranked_authors)*/
+    o.id_author,
+    a.city,
+    aut.firstname || ' ' || aut.lastname AS autor,
+    t.trimestru,
+    ROUND(SUM(o.quantity * o.price), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY a.city
+        ORDER BY ROUND(SUM(o.quantity * o.price), 1) DESC
+    ) AS rank
+FROM ORDER_WITH_DETAILS o
+JOIN ADDRESS a ON o.id_address = a.id_address
+JOIN AUTHOR aut ON o.id_author = aut.id_author
+JOIN TIME_TAM t ON o.id_timp = t.id_timp
+WHERE a.city IN ('Bucuresti', 'Barcelona', 'Milano', 'Lyon', 'Munhen', 'Mumbai')
+GROUP BY o.id_author, a.city, aut.firstname, aut.lastname, t.trimestru
+),
+filtered_authors AS (
+    SELECT autor, city 
+    FROM ranked_authors
+    WHERE rank <= 4
+)
+SELECT  
+    CASE 
+        WHEN GROUPING(ra.autor) = 0 THEN ra.autor
+        ELSE 'ALL AUTHORS'
+    END AS autor,
+    CASE 
+        WHEN GROUPING(ra.city) = 0 THEN ra.city
+        ELSE 'ALL CITIES'
+    END AS city,
+    CASE 
+        WHEN GROUPING(ra.trimestru) = 0 THEN TO_CHAR(ra.trimestru)
+        ELSE 'ALL TRIMESTERS'
+    END AS trimestru,
+    ROUND(SUM(ra.valoare_totala), 1) AS valoare_totala,
+    ROW_NUMBER() OVER (
+        PARTITION BY GROUPING(ra.city), GROUPING(ra.autor), GROUPING(ra.trimestru)
+        ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+    ) AS rank_per_group,
+    
+    CASE
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY ra.city 
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=1 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=3 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city)=7 THEN 
+                DENSE_RANK() OVER (
+                    PARTITION BY GROUPING_ID(ra.autor, ra.trimestru, ra.city)
+                    ORDER BY ROUND(SUM(ra.valoare_totala), 1) DESC
+                )
+            ELSE NULL
+        END AS ranking,
+    CASE 
+        WHEN GROUPING_ID(ra.autor, ra.trimestru, ra.city) = 0 THEN 
+            PERCENT_RANK() OVER (
+                PARTITION BY ra.city 
+                ORDER BY ROUND(SUM(ra.valoare_totala), 1)
+            )
+        ELSE NULL
+    END AS percent_rank_value,
+    GROUPING(ra.autor) AS "G_auth", 
+    GROUPING(ra.trimestru) AS "G_trim",
+    GROUPING(ra.city) AS "G_city",
+    GROUPING_ID(ra.autor, ra.trimestru, ra.city) AS grouping_id
+FROM ranked_authors ra
+JOIN filtered_authors fa ON ra.autor = fa.autor AND ra.city = fa.city
+GROUP BY ROLLUP(ra.autor, ra.trimestru, ra.city)
+having group_id()=0
+order by GROUPING_ID(ra.autor, ra.trimestru, ra.city),rank_per_group;
+
+--cost 13, exact cum e si fara hint deoarece aplica view-ul
+SELECT plan_table_output
+FROM   table(dbms_xplan.display('plan_table','ex_9_4','serial'));
+
+
+/*
+10. Crearea rapoartelor cu complexitate diferită (la acest nivel vor fi scripturi SQL, fără 
+reprezentare grafică) 
+*/
+
+/*
+1. Afisati cele mai vandute 3 categorii
+dintr-o perioada specificata, pentru cartile care nu au ramas fara stoc.
+(pentru reprezentarea grafică se vor alege două date calendaristice)
+*/
+WITH ranked_categories AS (
+    SELECT 
+        c.name,
+        SUM(od.quantity * od.price) AS total_sales,
+        DENSE_RANK() OVER (
+            ORDER BY SUM(od.quantity * od.price) DESC
+        ) AS sales_rank
+    FROM order_with_details od
+    JOIN book b ON od.id_book = b.id_book
+    JOIN category c ON od.id_category = c.id_category
+    WHERE b.stock_status > 0 -- Cartile care nu au ramas fara stoc
+    AND od.id_timp BETWEEN TO_DATE('2024-JUL-01', 'YYYY-MM-DD') AND TO_DATE('2024-JUL-20', 'YYYY-MM-DD')  
+    GROUP BY c.name
+),
+filtered_categories AS (
+    SELECT name, total_sales
+    FROM ranked_categories
+    WHERE sales_rank <= 3 -- Cele mai vandute 3 categorii
+)
+SELECT 
+    name,
+    total_sales
+FROM filtered_categories
+ORDER BY total_sales DESC;
+
+/*
+2. Obtineti pentru cele mai cumparate 5 edituri,
+procentele vanzarilor de catre persoane fizice
+si persoane juridice din totalul vanzarilor.
+*/
+WITH sales_by_pf AS (
+    SELECT 
+        od.id_publisher,
+        SUM(od.quantity * od.price) AS sales_by_pf
+    FROM 
+        order_with_details od
+    JOIN 
+        user_tam u ON od.id_user = u.id_user
+    WHERE 
+        u.type = 'Persoana fizica'
+    GROUP BY 
+        od.id_publisher
+),
+ranked_publishers AS (
+    SELECT 
+        p.name AS publisher_name,
+        SUM(od.quantity * od.price) AS total_sales,
+         COALESCE(spf.sales_by_pf, 0) AS sales_by_PF,
+        DENSE_RANK() OVER (
+            ORDER BY SUM(od.quantity * od.price) DESC
+        ) AS sales_rank
+    FROM order_with_details od
+    JOIN publisher p ON od.id_publisher = p.id_publisher
+   LEFT JOIN 
+    sales_by_pf spf ON od.id_publisher = spf.id_publisher
+    GROUP BY p.name,sales_by_PF
+),
+filtered_publishers AS (
+    SELECT publisher_name, total_sales,sales_by_PF
+    FROM ranked_publishers
+    WHERE sales_rank <= 5 
+)
+SELECT 
+    publisher_name,
+    total_sales,
+    ROUND((sales_by_PF / total_sales) * 100, 2) AS PF_sales_percentage,
+   100 -  ROUND((sales_by_PF / total_sales) * 100, 2) AS PJ_sales_percentage
+FROM filtered_publishers
+ORDER BY publisher_name DESC;
+
+
+/*
+3. Calculati pentru fiecare autor ale caror carti au fost comandate
+pozitia procentuala a valorii vanzarilor lunare a cartilor care nu au stoc epuizat.
+*/
+--pentru a simula si carti cu stoc epuizat
+select * from book WHERE id_book = 100 OR id_book = 800;--cea cu id 100 are stock 55, cea cu 800 72
+select * from order_with_details
+WHERE id_book = 100 OR id_book = 800;-- id 100 - author 55 a fost comandata de user 27(mar),10(ian),14(mai), iar cea cu 800 - author 88 - de 3 in mar,16 in iulie 
+
+UPDATE book
+SET stock_status = 0
+WHERE id_book = 100 OR id_book = 800;
+rollback;
+--cererea
+SELECT 
+    a.id_author,
+    t.luna_number,
+    a.firstName || ' ' || a.lastName AS author_name,
+    SUM(owd.quantity * owd.price) AS total_sales_books,
+    PERCENT_RANK() OVER (
+        PARTITION BY a.id_author 
+        ORDER BY SUM(owd.quantity * owd.price)
+    ) AS percent_rank_
+FROM 
+    ORDER_WITH_DETAILS owd
+JOIN 
+    BOOK b ON owd.id_book = b.id_book
+JOIN 
+    TIME_TAM t ON owd.id_timp = t.id_timp
+JOIN 
+    AUTHOR a ON owd.id_author = a.id_author
+
+WHERE 
+    b.stock_status >= 1  
+GROUP BY 
+    a.id_author, 
+    a.firstName, 
+    a.lastName,t.luna_number;
+
+--a nu se uita a se da rollback
+/*
+4. Comparati suma vânzarilor pentru toate editurile, din trimestrul curent, 
+trimestrul anterior si cel care urmeaza raportat atat la trimestrele cu vanzari si la cele fara vanzari
+În cererea SQL s-a selectat anul 2024 și toate trimestrele, sau anul 2024 si trimestrul 2
+iar pentru reprezentarea grafică se vor alege un număr de trimestru și un an.
+*/
+
+--varianta de pregatire in care sunt afisate doar pentru fiecare publisher care a facut vanzari si doar pentru trimestrele in care a avut vanzari
+--SELECT name,trimestru,
+--       SUM(price*quantity) AS VANZARI,
+--       LAG(SUM(price*quantity),1)  OVER (partition by name ORDER BY trimestru) AS LAG1,
+--       LEAD(SUM(price*quantity),1) OVER (partition by name ORDER BY trimestru) AS LEAD1
+--FROM   order_with_details o, time_tam t, publisher p
+--WHERE  o.id_timp=t.id_timp and o.id_publisher = p.id_publisher
+--and    an = 2024
+--GROUP BY name,trimestru
+--order by name;
+
+--varianta in care sunt afisate pentru toti publishers toate trimestrele si vanzarile pe ele. 
+
+SELECT p.id_publisher, p.name, t.trimestru,
+       NVL(SUM(o.price * o.quantity), 0) AS VANZARI,
+       COALESCE(LAG(SUM(o.price * o.quantity), 1) OVER (PARTITION BY p.name ORDER BY t.trimestru), 0) AS LAG1,
+       COALESCE(LEAD(SUM(o.price * o.quantity), 1) OVER (PARTITION BY p.name ORDER BY t.trimestru), 0) AS LEAD1
+FROM time_tam t
+LEFT JOIN publisher p
+  ON p.id_publisher IS NOT NULL
+LEFT JOIN order_with_details o
+  ON o.id_timp = t.id_timp AND o.id_publisher = p.id_publisher
+WHERE t.an = 2024
+GROUP BY p.id_publisher, p.name, t.trimestru
+ORDER BY p.id_publisher;
+
+--varianta de selectare a unui trimestru folosita pentru rapoarte
+SELECT * FROM(
+SELECT p.id_publisher, p.name, t.trimestru,
+       NVL(SUM(o.price * o.quantity), 0) AS VANZARI,
+       COALESCE(LAG(SUM(o.price * o.quantity), 1) OVER (PARTITION BY p.name ORDER BY t.trimestru), 0) AS LAG1,
+       COALESCE(LEAD(SUM(o.price * o.quantity), 1) OVER (PARTITION BY p.name ORDER BY t.trimestru), 0) AS LEAD1
+FROM time_tam t
+LEFT JOIN publisher p
+  ON p.id_publisher IS NOT NULL
+LEFT JOIN order_with_details o
+  ON o.id_timp = t.id_timp AND o.id_publisher = p.id_publisher
+WHERE t.an = 2024
+GROUP BY p.id_publisher, p.name, t.trimestru
+ORDER BY p.id_publisher
+)
+WHERE trimestru = 2;
+/*
+5.Calculati valoarea vanzarilor dintr-o zi,
+totalul vanzarilor  de la începutul lunii pana la ziua selectata,
+diferenta dintre vanzarile din ziua curenta selectata si cele din ziua precedenta,
+media vanzarilor zilnice pe ultimele trei zile raportat la ziua selectata.
+În cererea SQL se va alege o zi din anul 2024,
+iar pentru raport se va introduce o dată pe baza căreia se va face statistica.
+*/
+WITH sales_per_day AS (
+    SELECT 
+        t.data AS sale_date,
+        nvl(SUM(owd.quantity * owd.price),0) AS daily_sales
+    FROM 
+        ORDER_WITH_DETAILS owd
+    JOIN 
+        TIME_TAM t ON owd.id_timp = t.id_timp
+    WHERE 
+        EXTRACT(YEAR FROM t.data) = 2024
+    GROUP BY 
+        t.data
+),
+sales_with_aggregated_avg AS (
+    SELECT 
+        sale_date,
+        daily_sales,
+        SUM(daily_sales) OVER (
+            PARTITION BY TO_CHAR(sale_date, 'YYYY-MM') 
+            ORDER BY sale_date
+        ) AS total_sales_in_a_month,
+        LAG(daily_sales) OVER (ORDER BY sale_date) AS previous_day_sales,
+        ROUND(
+            AVG(daily_sales) OVER (
+                ORDER BY sale_date 
+                ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+            ), 2
+        ) AS avg_sales_last_3_days
+    FROM 
+        sales_per_day
+)
+SELECT 
+    sale_date,
+    daily_sales AS current_day_sales,
+    total_sales_in_a_month,
+    daily_sales - COALESCE(previous_day_sales, 0) AS previous_day_sales_minus_current_day,
+    avg_sales_last_3_days
+FROM 
+    sales_with_aggregated_avg
+WHERE 
+    sale_date = TO_DATE('2024-07-15', 'YYYY-MM-DD');
+
+
+--Pentru ziua de 15-07-2024 existenta in tabel query-ul nostru ne va da:
+--Vânzarile din ziua curenta aleasa.
+--Totalul vânzarilor de la începutul lunii (iulie pâna la 15 iulie 2024).
+--Diferenta dintre vânzarile din ziua curenta aleasa si cele din ziua precedenta aceasteia.
+--Media vânzarilor zilnice din ultimele 3 zile (inclusiv ziua curenta aleasa).
+
+
+
+--transformarea scripturilor de la 10 pentru a fi puse in interfata
+--dar vor fi comentate deoarece fac parte din implementarea aplicației
+
+--1
+/*
+WITH ranked_categories AS (
+    SELECT 
+        c.name,
+        SUM(od.quantity * od.price) AS total_sales,
+        DENSE_RANK() OVER (
+            ORDER BY SUM(od.quantity * od.price) DESC
+        ) AS sales_rank
+    FROM order_with_details od
+    JOIN book b ON od.id_book = b.id_book
+    JOIN category c ON od.id_category = c.id_category
+    WHERE b.stock_status > 0 
+    AND od.id_timp BETWEEN TO_DATE(:data_start, 'YYYY-MM-DD') AND TO_DATE(:data_final, 'YYYY-MM-DD') 
+    GROUP BY c.name
+),
+filtered_categories AS (
+    SELECT name, total_sales
+    FROM ranked_categories
+    WHERE sales_rank <= 3 
+)
+SELECT 
+    name,
+    total_sales
+FROM filtered_categories
+ORDER BY total_sales DESC
+*/
+
+--2
+/*
+WITH sales_by_pf AS (
+    SELECT 
+        od.id_publisher,
+        SUM(od.quantity * od.price) AS sales_by_pf
+    FROM 
+        order_with_details od
+    JOIN 
+        user_tam u ON od.id_user = u.id_user
+    WHERE 
+        u.type = 'Persoana fizica'
+    GROUP BY 
+        od.id_publisher
+),
+ranked_publishers AS (
+    SELECT 
+        p.name AS publisher_name,
+        SUM(od.quantity * od.price) AS total_sales,
+         COALESCE(spf.sales_by_pf, 0) AS sales_by_PF,
+        DENSE_RANK() OVER (
+            ORDER BY SUM(od.quantity * od.price) DESC
+        ) AS sales_rank
+    FROM order_with_details od
+    JOIN publisher p ON od.id_publisher = p.id_publisher
+   LEFT JOIN 
+    sales_by_pf spf ON od.id_publisher = spf.id_publisher
+    GROUP BY p.name,sales_by_PF
+),
+filtered_publishers AS (
+    SELECT publisher_name, total_sales,sales_by_PF
+    FROM ranked_publishers
+    WHERE sales_rank <= 5 
+)
+SELECT 
+    publisher_name,
+    total_sales,
+    ROUND((sales_by_PF / total_sales) * 100, 2) AS PF_sales_percentage,
+   100 -  ROUND((sales_by_PF / total_sales) * 100, 2) AS PJ_sales_percentage
+FROM filtered_publishers
+ORDER BY publisher_name DESC
+*/
+
+--3
+/*
+SELECT 
+    a.id_author,
+    t.luna_number,
+    a.firstName || ' ' || a.lastName AS author_name,
+    SUM(owd.quantity * owd.price) AS total_sales_books,
+    PERCENT_RANK() OVER (
+        PARTITION BY a.id_author 
+        ORDER BY SUM(owd.quantity * owd.price)
+    ) AS percent_rank_
+FROM 
+    ORDER_WITH_DETAILS owd
+JOIN 
+    BOOK b ON owd.id_book = b.id_book
+JOIN 
+    TIME_TAM t ON owd.id_timp = t.id_timp
+JOIN 
+    AUTHOR a ON owd.id_author = a.id_author
+
+WHERE 
+    b.stock_status >= 1  
+GROUP BY 
+    a.id_author, 
+    a.firstName, 
+    a.lastName,t.luna_number
+*/
+
+--4
+/*
+select * from
+(SELECT p.id_publisher, p.name, t.trimestru,
+       NVL(SUM(o.price * o.quantity), 0) AS VANZARI,
+       COALESCE(LAG(SUM(o.price * o.quantity), 1) OVER (PARTITION BY p.name ORDER BY t.trimestru), 0) AS LAG1,
+       COALESCE(LEAD(SUM(o.price * o.quantity), 1) OVER (PARTITION BY p.name ORDER BY t.trimestru), 0) AS LEAD1
+FROM time_tam t
+LEFT JOIN publisher p
+  ON p.id_publisher IS NOT NULL
+LEFT JOIN order_with_details o
+  ON o.id_timp = t.id_timp AND o.id_publisher = p.id_publisher
+WHERE t.an = :anul
+GROUP BY p.id_publisher, p.name, t.trimestru
+ORDER BY p.id_publisher)
+where trimestru = :trims
+*/
+
+--5
+/*
+WITH sales_per_day AS (
+    SELECT 
+        t.data AS sale_date,
+        nvl(SUM(owd.quantity * owd.price),0) AS daily_sales
+    FROM 
+        ORDER_WITH_DETAILS owd
+    right JOIN 
+        TIME_TAM t ON owd.id_timp = t.id_timp
+    WHERE 
+        EXTRACT(YEAR FROM t.data) = EXTRACT(YEAR FROM TO_DATE(:select_date, 'YYYY-MM-DD'))
+    GROUP BY 
+        t.data
+),
+sales_with_aggregated_avg AS (
+    SELECT 
+        sale_date,
+        daily_sales,
+        SUM(daily_sales) OVER (
+            PARTITION BY TO_CHAR(sale_date, 'YYYY-MM') 
+            ORDER BY sale_date
+        ) AS total_sales_in_a_month,
+        LAG(daily_sales) OVER (ORDER BY sale_date) AS previous_day_sales,
+        ROUND(
+            AVG(daily_sales) OVER (
+                ORDER BY sale_date 
+                ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+            ), 2
+        ) AS avg_sales_last_3_days
+    FROM 
+        sales_per_day
+)
+SELECT 
+    sale_date,
+    daily_sales AS current_day_sales,
+    total_sales_in_a_month,
+    daily_sales - COALESCE(previous_day_sales, 0) AS previous_day_sales_minus_current_day,
+    avg_sales_last_3_days
+FROM 
+    sales_with_aggregated_avg
+WHERE 
+    sale_date = TO_DATE(:select_date, 'YYYY-MM-DD')
+
+*/
+
+--inca un cod de backend oracle dar implementat pentru implementare aplicatie
+-- cel prin care se face propagarea de la oltp la dw
+--rulat din olap
+CREATE OR REPLACE PROCEDURE proc_etl AS
+BEGIN
+    --AUTHOR
+    BEGIN
+        EXECUTE IMMEDIATE 'ALTER TABLE AUTHOR ENABLE CONSTRAINT PK_AUTHOR';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLCODE != -2443 THEN 
+                RAISE;
+            END IF;
+    END;
+
+    FOR r IN (SELECT * FROM dwbi_miruna.author_vw)LOOP
+        BEGIN
+            MERGE INTO AUTHOR olap
+            USING(
+                SELECT r.id_author as id_author,r.firstname as firstname,r.lastname as lastname
+                FROM DUAL) olt
+            ON (olap.id_author = olt.id_author)
+            WHEN NOT MATCHED THEN
+                INSERT (id_author,firstname,lastname)
+                VALUES (olt.id_author,olt.firstname,olt.lastname);
+        END;
+    END LOOP;
+    
+   EXECUTE IMMEDIATE 'ALTER TABLE AUTHOR DISABLE VALIDATE CONSTRAINT PK_AUTHOR';
+    
+        --CATEGORY
+        
+    BEGIN
+        EXECUTE IMMEDIATE 'ALTER TABLE CATEGORY ENABLE CONSTRAINT PK_CATEGORY';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLCODE != -2443 THEN 
+                RAISE;
+            END IF;
+    END;
+    FOR r IN (SELECT * FROM dwbi_miruna.category_vw) LOOP
+        BEGIN
+            MERGE INTO CATEGORY olap
+            USING(
+                SELECT r.id_category as id_category, r.name as name
+                FROM DUAL) olt
+            ON (olap.id_category = olt.id_category)
+            WHEN NOT MATCHED THEN
+                INSERT (id_category, name)
+                VALUES(olt.id_category,olt.name);
+        END;
+    END LOOP;
+    EXECUTE IMMEDIATE 'ALTER TABLE CATEGORY DISABLE VALIDATE CONSTRAINT PK_CATEGORY';
+    
+
+     --PUBLISHER
+    BEGIN
+        EXECUTE IMMEDIATE 'ALTER TABLE PUBLISHER ENABLE CONSTRAINT pk_publisher';
+    EXCEPTION
+        WHEN OTHERS THEN
+            IF SQLCODE != -2443 THEN 
+                RAISE;
+            END IF;
+    END;
+       
+    FOR r IN (SELECT * FROM dwbi_miruna.publisher_vw) LOOP
+        BEGIN
+            MERGE INTO PUBLISHER olap
+            USING(
+                SELECT r.id_publisher as id_publisher, r.name as name, r.email as email
+                FROM DUAL) olt
+            ON (olap.id_publisher = olt.id_publisher)
+            WHEN NOT MATCHED THEN
+                INSERT (id_publisher, name,email)
+                VALUES(olt.id_publisher,olt.name,olt.email);
+        END;
+    END LOOP;
+    
+    EXECUTE IMMEDIATE 'ALTER TABLE PUBLISHER DISABLE VALIDATE CONSTRAINT pk_publisher';
+    
+    
+    --ADDRESS
+    FOR r IN (SELECT * FROM dwbi_miruna.address_vw) LOOP
+        BEGIN
+            MERGE INTO ADDRESS olap
+            USING(
+                SELECT r.id_address as id_address, r.country as country, r.street as street,r.city as city
+                FROM DUAL) olt
+            ON (olap.id_address = olt.id_address)
+            WHEN NOT MATCHED THEN
+                INSERT (id_address, country,street,city)
+                VALUES(olt.id_address,olt.country,olt.street,olt.city);
+        END;
+    END LOOP;
+    
+    --BOOK 
+    FOR r IN (SELECT * FROM dwbi_miruna.book_vw) LOOP
+        BEGIN
+            MERGE INTO BOOK olap
+            USING(
+                SELECT r.id_book as id_book, r.name as name, r.stock_status as stock_status,r.year as year,r.description as description,
+                r.publisherName as publisherName,r.serieName as serieName,r.authorName as authorName,r.categoryName as categoryName
+                FROM DUAL) olt
+            ON (olap.id_book = olt.id_book)
+            WHEN NOT MATCHED THEN
+                INSERT (id_book,name,stock_status,year,description,publisher_name,serie_name,author_name,category_name)
+                VALUES(olt.id_book,olt.name,olt.stock_status,olt.year,
+                olt.description,olt.publisherName,olt.serieName,olt.authorName,
+                olt.categoryName);
+        END;
+    END LOOP;
+    
+    --USER_TAM
+    FOR r IN (SELECT * FROM dwbi_miruna.user_vw) LOOP
+        BEGIN
+            MERGE INTO USER_TAM olap
+            USING(
+                SELECT r.id_user as id_user, r.email as email, r.name as name,r.gender as gender,r.type as type
+                FROM DUAL) olt
+            ON (olap.id_user = olt.id_user)
+            WHEN NOT MATCHED THEN
+                INSERT (id_user,email,name,gender,type)
+                VALUES(olt.id_user,olt.email,olt.name,olt.gender,olt.type);
+        END;
+    END LOOP;
+    
+END;
+/
+--BEGIN
+--    DBMS_SCHEDULER.DROP_JOB(job_name => 'ETL_SYNC_DIM_JOB');
+--END;
+--/
+
+--disable
+BEGIN
+    DBMS_SCHEDULER.DISABLE('ETL_SYNC_DIM_JOB');
+END;
+/
+BEGIN
+    DBMS_SCHEDULER.ENABLE('ETL_SYNC_DIM_JOB');
+END;
+/
+BEGIN
+    DBMS_SCHEDULER.CREATE_JOB(
+        job_name        => 'ETL_SYNC_DIM_JOB',
+        job_type        => 'PLSQL_BLOCK',
+        job_action      => 'BEGIN proc_etl; END;',
+        start_date      => SYSTIMESTAMP,
+        repeat_interval => 'FREQ=MINUTELY; INTERVAL=2',
+        enabled         => TRUE
+    );
+END;
+/
+SELECT job_name, start_date, repeat_interval, state 
+FROM USER_SCHEDULER_JOBS 
+WHERE job_name = 'ETL_SYNC_DIM_JOB';
+
+CREATE OR REPLACE PROCEDURE proc_etl_fapta AS
+BEGIN
+    FOR r IN (SELECT * FROM dwbi_miruna.order_with_details_vw) LOOP
+        BEGIN
+                MERGE INTO order_with_details olap
+                USING (SELECT r.id_user as id_user, r.id_book as id_book, r.id_publisher as id_publisher, r.id_address as id_address, r.id_category as id_category, r.id_author as id_author, 
+                              r.order_date as order_date, r.quantity as quantity, r.price as price FROM DUAL) olt
+                ON (olap.id_user = olt.id_user AND olap.id_book = olt.id_book and olap.id_publisher = olt.id_publisher 
+                    and olap.id_address = olt.id_address and olap.id_category = olt.id_category and olap.id_author = olt.id_author and trunc(olap.id_timp) = trunc(olt.order_date))
+                WHEN NOT MATCHED THEN
+                    INSERT (id_user, id_book, id_publisher, id_address, id_category, id_author, id_timp, quantity, price)
+                    VALUES (olt.id_user, olt.id_book, olt.id_publisher, olt.id_address, olt.id_category, 
+                            olt.id_author, trunc(olt.order_date), olt.quantity, olt.price);
+        END;
+    END LOOP;
+    COMMIT;
+    DBMS_MVIEW.REFRESH('vm_ranked_authors', 'C');
+end;
+/
+
+BEGIN
+    DBMS_SCHEDULER.CREATE_JOB(
+        job_name        => 'ETL_SYNC_FAPT_JOB',
+        job_type        => 'PLSQL_BLOCK',
+        job_action      => 'BEGIN proc_etl_fapta; END;',
+        start_date      => SYSTIMESTAMP,
+        repeat_interval => 'FREQ=MINUTELY; INTERVAL=1',
+        enabled         => TRUE
+    );
+END;
+/
+BEGIN
+    DBMS_SCHEDULER.DISABLE('ETL_SYNC_FAPT_JOB');
+END;
+/
+--enable job care preia doar orderurile completed
+BEGIN
+    DBMS_SCHEDULER.ENABLE('ETL_SYNC_FAPT_JOB');
+END;
+/
+
+SELECT job_name, start_date, repeat_interval, state 
+FROM USER_SCHEDULER_JOBS 
+WHERE job_name = 'ETL_SYNC_FAPT_JOB';
+
+--verificare cand a fost facut ultimul commit;
+SELECT mview_name, last_refresh_type, last_refresh_date
+FROM dba_mviews
+WHERE mview_name = 'VM_RANKED_AUTHORS';  
+
+
+--si codurile sql pentru module dar se vor pune comentate
+/*
+--1. DWBI_miruna
+--address get
+select id_address,street,block,a.id_city,c.name city,co.name country,a.id_user,u.name username from address a
+join city c on a.id_city = c.id_city
+join user_tam u on a.id_user = u.id_user
+join country co on c.id_country = co.id_country
+order by id_address
+--address post
+DECLARE
+    v_street VARCHAR2(25);
+    v_block VARCHAR2(25);
+    v_id_city NUMBER;
+    v_id_user NUMBER;
+BEGIN
+
+    FOR r IN (
+        SELECT jt.street, jt.block,jt.id_city,jt.id_user
+        FROM JSON_TABLE(
+            :body, '$'
+            COLUMNS (
+                street VARCHAR2(25) PATH '$.street',
+                block VARCHAR2(25) PATH '$.block',
+                id_city NUMBER PATH '$.id_city',
+                id_user NUMBER PATH '$.id_user'
+            )
+        ) jt
+    ) LOOP
+        v_street := r.street;
+        v_block := r.block;
+        v_id_city := r.id_city;
+        v_id_user := r.id_user;
+    END LOOP;
+
+    IF v_street IS NULL OR v_block IS NULL OR v_id_city IS NULL OR v_id_user IS NULL THEN
+        HTP.PRN('{"error": "All fields are required"}');
+        RETURN;
+    END IF;
+
+    INSERT INTO ADDRESS (id_address, street, block, id_city, id_user)
+    VALUES (NEXT_ID_ADDRESS.NEXTVAL,v_street,v_block,v_id_city,v_id_user);
+
+    COMMIT;
+
+    HTP.PRN('{"message": "Address created successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+--authors get
+select * from author
+order by id_author
+--books
+--get
+select b.id_book,b.name book,price,stock_status,year,description,b.id_publisher, p.name publisher ,b.id_category, c.name category,b.id_author,a.firstname firstname, a.lastname lastname,b.id_serie, s.name serie,p.email email_publisher
+from book b
+join publisher p on b.id_publisher = p.id_publisher
+join category c on b.id_category = c.id_category
+join author a on b.id_author = a.id_author
+join serie s on b.id_serie = s.id_serie
+order by b.id_book
+--post
+DECLARE
+    v_name_book VARCHAR2(255);
+    v_price_book NUMBER;
+    v_stock_status NUMBER;
+    v_year NUMBER;
+    v_description VARCHAR2(255);
+    v_firstname_author VARCHAR2(255);
+    v_lastname_author VARCHAR2(255);
+    v_name_category VARCHAR2(255);
+    v_name_serie VARCHAR2(255);
+    v_name_publisher VARCHAR2(255);
+    v_email_publisher VARCHAR2(255);
+
+    v_id_author NUMBER;
+    v_id_publisher NUMBER;
+    v_id_category NUMBER;
+    v_id_serie NUMBER;
+BEGIN
+    FOR r IN (
+        SELECT jt.name_b, jt.price, jt.stock_status,jt.year,jt.description, jt.firstname, jt.lastname, jt.name_p, jt.name_s, jt.name_c, jt.email_p
+        FROM JSON_TABLE(
+            :body, '$'
+            COLUMNS (
+                name_b VARCHAR2(255) PATH '$.book',
+                price NUMBER(10,2) PATH '$.price',
+                stock_status NUMBER(10) PATH '$.stock_status',
+                year NUMBER(5) PATH '$.year',
+                description VARCHAR2(255) PATH '$.description',
+                firstname  VARCHAR2(255) PATH '$.firstname',
+                lastname  VARCHAR2(255) PATH '$.lastname',
+                name_p VARCHAR2(255) PATH '$.publisher',
+                name_s VARCHAR2(255) PATH '$.serie',
+                name_c VARCHAR2(255) PATH '$.category',
+                email_p VARCHAR2(255) PATH '$.email_publisher'
+            )
+        ) jt
+    ) LOOP
+        v_name_book := r.name_b;
+        v_price_book := r.price;
+        v_stock_status := r.stock_status;
+        v_year := r.year;
+        v_description := r.description;
+        v_firstname_author := r.firstname;
+        v_lastname_author := r.lastname;
+        v_name_category := r.name_c;
+        v_name_serie := r.name_s;
+        v_name_publisher := r.name_p;
+        v_email_publisher := r.email_p;
+    END LOOP;
+
+    BEGIN
+        SELECT id_serie
+        INTO v_id_serie
+        FROM serie
+        WHERE name = v_name_serie
+        FETCH FIRST 1 ROWS ONLY;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            INSERT INTO SERIE (id_serie, name)
+            VALUES (NEXT_ID_SERIE.NEXTVAL, v_name_serie)
+            RETURNING id_serie INTO v_id_serie;
+    END;
+
+    BEGIN
+        SELECT id_category
+        INTO v_id_category
+        FROM category
+        WHERE name = v_name_category
+        FETCH FIRST 1 ROWS ONLY;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            INSERT INTO category (id_category, name)
+            VALUES (next_id_category.NEXTVAL, v_name_category)
+            RETURNING id_category INTO v_id_category;
+    END;
+
+    BEGIN
+        SELECT id_publisher
+        INTO v_id_publisher
+        FROM publisher
+        WHERE name = v_name_publisher and email = v_email_publisher
+        FETCH FIRST 1 ROWS ONLY;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            INSERT INTO publisher (id_publisher, name,email)
+            VALUES (next_id_publisher.nextval, v_name_publisher,v_email_publisher)
+            RETURNING id_publisher INTO v_id_publisher;
+    END;
+
+    BEGIN
+        SELECT id_author
+        INTO v_id_author
+        FROM author
+        WHERE firstname = v_firstname_author and lastname = v_lastname_author
+        FETCH FIRST 1 ROWS ONLY;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            INSERT INTO AUTHOR (id_author, firstName, lastName) 
+            VALUES (next_id_author.nextval, v_firstname_author,v_lastname_author)
+            RETURNING id_author INTO v_id_author;
+    END;
+
+    INSERT INTO BOOK (id_book, name, price, stock_status, year, description, 
+                          id_publisher, id_category, id_author, id_serie) 
+    VALUES (NEXT_ID_BOOK.NEXTVAL, v_name_book, v_price_book, v_stock_status,v_year,v_description,
+     v_id_publisher, v_id_category, v_id_author, v_id_serie);
+
+    COMMIT;
+
+    HTP.PRN('{"message": "Book created successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+--upate
+DECLARE
+    v_id_book NUMBER;
+    v_price NUMBER(10,2);
+BEGIN
+    SELECT jt.id_book, jt.price
+    INTO v_id_book, v_price
+    FROM JSON_TABLE(
+        :body, '$'
+        COLUMNS (
+            id_book NUMBER PATH '$.idBook',
+            price NUMBER(10,2) PATH '$.price'
+        )
+    ) jt;
+
+    UPDATE BOOK
+    SET price = v_price
+    WHERE id_book = v_id_book;
+
+    COMMIT;
+
+    HTP.PRN('{"message": "Book price updated successfully"}');
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        HTP.PRN('{"error": "Order not found"}');
+    WHEN OTHERS THEN
+        ROLLBACK;
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+--categories get
+SELECT * from category
+order by id_category
+
+--cities
+-- get
+select c.id_city,c.name,c.id_country, co.name country
+from city c
+join country co on c.id_country = co.id_country
+order by c.id_city
+--post
+DECLARE
+    v_name VARCHAR2(25);
+    v_id_country NUMBER;
+BEGIN
+
+    FOR r IN (
+        SELECT jt.name, jt.id_country
+        FROM JSON_TABLE(
+            :body, '$'
+            COLUMNS (
+                name VARCHAR2(25) PATH '$.name',
+                id_country NUMBER PATH '$.id_country'
+            )
+        ) jt
+    ) LOOP
+        v_name := r.name;
+        v_id_country := r.id_country;
+    END LOOP;
+
+    IF v_name IS NULL THEN
+        HTP.PRN('{"error": "Name is required"}');
+        RETURN;
+    END IF;
+
+    IF v_id_country IS NULL THEN
+        HTP.PRN('{"error": "ID Country is required"}');
+        RETURN;
+    END IF;
+
+    INSERT INTO CITY (id_city, name, id_country)
+    VALUES (NEXT_ID_CITY.NEXTVAL, v_name, v_id_country);
+
+    COMMIT;
+
+    HTP.PRN('{"message": "City created successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+--countries
+--get
+select * from country
+order by id_country
+--post
+DECLARE
+    v_name VARCHAR2(25);
+BEGIN
+   v_name := json_value(:body, '$.name');
+
+    INSERT INTO country (id_country, name)
+    VALUES (NEXT_ID_COUNTRY.NEXTVAL,v_name);
+
+    COMMIT;
+
+    HTP.PRN('{"message": "Country created successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+--order_details
+--post
+DECLARE
+    v_id_order NUMBER;
+    v_id_book NUMBER;
+    v_price NUMBER(10, 2);
+    v_quantity NUMBER(10);
+    v_discount NUMBER(5, 2);
+
+BEGIN
+    FOR r IN (
+        SELECT jt.id_order, jt.id_book, jt.quantity,jt.price, jt.discount
+        FROM JSON_TABLE(
+            :body, '$' 
+            COLUMNS (
+                id_order NUMBER PATH '$.id_order',
+                id_book NUMBER PATH '$.id_book',
+                quantity NUMBER(10) PATH '$.quantity',
+                price NUMBER(10,2) PATH '$.price',
+                discount NUMBER(5, 2) PATH '$.discount'
+            )
+        ) jt
+    ) LOOP
+        v_id_order := r.id_order;
+        v_id_book := r.id_book;
+        v_price := r.price;
+        v_quantity := r.quantity;
+        v_discount := r.discount;
+    END LOOP;
+    INSERT INTO order_detail (id_order, id_book, quantity,price, discount)
+    VALUES (v_id_order, v_id_book, v_quantity,v_price, v_discount);
+
+    UPDATE BOOK
+    SET stock_status = stock_status - v_quantity
+    WHERE id_book = v_id_book;
+    COMMIT;
+
+    UPDATE ORDER_TAM
+    SET total_price = (SELECT SUM(price * quantity * (1-discount/100)) FROM ORDER_DETAIL WHERE id_order = v_id_order GROUP BY id_order)
+    WHERE id_order = v_id_order;
+    HTP.PRN('{"message": "Order details inserted successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+--get
+select b.name,od.id_book,id_order,quantity,od.price,discount
+from order_detail od
+join book b on od.id_book = b.id_book
+where od.id_order = :idorder
+
+--orders
+--get 1
+DECLARE
+    v_username VARCHAR2(255);
+    v_result CLOB;
+BEGIN
+    v_username := :username;
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+                'id_order' VALUE o.id_order,
+                'order_date' VALUE TO_CHAR(o.order_date, 'YYYY-MM-DD'),
+                'total_price' VALUE o.total_price,
+                'status' VALUE o.status,
+                'id_address' VALUE o.id_address,
+                'order_details' VALUE (
+                    SELECT JSON_ARRAYAGG(
+                             JSON_OBJECT(
+                                'id_book' VALUE od.id_book,
+                                'quantity' VALUE od.quantity,
+                                'price' VALUE od.price,
+                                'discount' VALUE od.discount
+                             )
+                         )
+                    FROM ORDER_DETAIL od
+                    WHERE od.id_order = o.id_order
+
+                )
+             )
+           ) INTO v_result
+    FROM ORDER_TAM o
+    JOIN USER_TAM u ON o.id_user = u.id_user
+    WHERE u.name = v_username;
+
+
+    HTP.PRN(v_result);
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        HTP.PRN('{"error": "No orders found for the specified user"}');
+    WHEN OTHERS THEN
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+--get 2
+select o.id_order,u.name,o.id_user,order_date,total_price,status,a.street,a.block,c.name city, co.name country,o.id_address
+from order_tam o
+join user_tam u on o.id_user = u.id_user
+join address a on o.id_address = a.id_address
+join city c on a.id_city = c.id_city
+join country co on c.id_country = co.id_country
+order by order_date desc
+
+--post
+DECLARE
+    v_id_user NUMBER;
+    v_id_address NUMBER;
+BEGIN
+
+    FOR r IN (
+        SELECT jt.id_user, jt.id_address
+        FROM JSON_TABLE(
+            :body, '$'
+            COLUMNS (
+                id_user NUMBER PATH '$.id_user',
+                id_address NUMBER PATH '$.id_address'
+            )
+        ) jt
+    ) LOOP
+        v_id_user := r.id_user;
+        v_id_address := r.id_address;
+    END LOOP;
+
+    INSERT INTO ORDER_TAM (id_order, id_user, order_date, total_price, status, id_address)
+    VALUES (NEXT_ID_ORDER_TAM.NEXTVAL, v_id_user, SYSDATE, 0, 'Pending', v_id_address);
+
+    COMMIT;
+
+    HTP.PRN('{"message": "Order created successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+--update
+DECLARE
+    v_id_order NUMBER;
+    v_status VARCHAR2(50);
+BEGIN
+    SELECT jt.id_order, jt.status
+    INTO v_id_order, v_status
+    FROM JSON_TABLE(
+        :body, '$'
+        COLUMNS (
+            id_order NUMBER PATH '$.idOrder',
+            status VARCHAR2(50) PATH '$.status'
+        )
+    ) jt;
+
+    UPDATE ORDER_TAM
+    SET status = v_status
+    WHERE id_order = v_id_order;
+
+    COMMIT;
+
+    IF v_status = 'Cancelled' THEN
+        FOR r IN (
+            SELECT id_book, quantity
+            FROM ORDER_DETAIL
+            WHERE id_order = v_id_order
+        ) LOOP
+            UPDATE BOOK
+            SET stock_status = stock_status + r.quantity
+            WHERE id_book = r.id_book;
+        END LOOP;
+    END IF;
+
+    COMMIT;
+
+    HTP.PRN('{"message": "Order status updated successfully"}');
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        HTP.PRN('{"error": "Order not found"}');
+    WHEN OTHERS THEN
+        ROLLBACK;
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+--pblisher get
+select * from publisher
+order by id_publisher
+
+--review
+--get
+select * from review
+order by review_date desc
+--post
+DECLARE
+    v_id_user NUMBER;
+    v_id_book NUMBER;
+    v_rating NUMBER;
+    v_comment VARCHAR2(1000);
+
+BEGIN
+    FOR r IN (
+        SELECT jt.id_user, jt.id_book, jt.rating,jt.review_comment
+        FROM JSON_TABLE(
+            :body, '$'
+            COLUMNS (
+                id_user NUMBER(5) PATH '$.id_user',
+                id_book NUMBER(5) PATH '$.id_book',
+                rating NUMBER(1) PATH '$.rating',
+                review_comment VARCHAR2(1000) PATH '$.review_comment'
+            )
+        ) jt
+    ) LOOP
+        v_id_user := r.id_user;
+        v_id_book := r.id_book;
+        v_rating := r.rating;
+        v_comment := r.review_comment;
+    END LOOP;
+
+     INSERT INTO REVIEW (review_date, id_user, id_book, rating, review_comment) 
+    VALUES (SYSDATE, v_id_user, v_id_book, v_rating, v_comment);
+
+    COMMIT;
+
+    HTP.PRN('{"message": "Review created successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+--serie
+--get
+select * from serie
+order by id_serie
+
+--user
+--get
+select * from user_tam
+order by id_user
+--post
+DECLARE
+    v_name VARCHAR2(255);
+    v_email VARCHAR2(100);
+    v_password VARCHAR2(255);
+    v_gender VARCHAR2(5);
+    v_type VARCHAR2(20);
+
+BEGIN
+    FOR r IN (
+        SELECT jt.name, jt.email, jt.password,jt.gender,jt.type
+        FROM JSON_TABLE(
+            :body, '$'
+            COLUMNS (
+                name VARCHAR2(255) PATH '$.name',
+                email VARCHAR2(100) PATH '$.email',
+                password VARCHAR2(255) PATH '$.password',
+                gender VARCHAR2(5) PATH '$.gender',
+                type VARCHAR2(20) PATH '$.type'
+            )
+        ) jt
+    ) LOOP
+        v_name := r.name;
+        v_email := r.email;
+        v_password := r.password;
+        v_gender := r.gender;
+        v_type := r.type;
+    END LOOP;
+
+    INSERT INTO USER_TAM (id_user, name, email, password, accountCreationDate, is_deleted, gender, type)
+    VALUES (NEXT_ID_USER.NEXTVAL, v_name, v_email, v_password, SYSDATE, 0, v_gender, v_type);
+
+    COMMIT;
+
+    HTP.PRN('{"message": "User created successfully"}');
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        HTP.PRN('{"error": "' || SQLERRM || '"}');
+END;
+
+
+--dwbi_olap
+--address get
+select * from address
+order by id_address
+
+--authors get
+select * from author
+order by id_author
+
+--books get
+select * from book
+order by id_book
+
+--categories get
+select * from category
+order by id_category
+
+--order_with_detils get
+select * from order_with_details
+order by id_timp desc
+
+--publishers get
+select * from publisher
+order by id_publisher
+
+--users get
+select * from user_tam
+order by id_user
+*/
+
